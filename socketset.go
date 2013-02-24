@@ -80,8 +80,8 @@ func (soc *Socket) SetUnsubscribe(filter string) error {
 }
 
 // Set socket identity
-func (soc *Socket) SetIdentity(filter string) error {
-	return soc.setString(C.ZMQ_IDENTITY, filter)
+func (soc *Socket) SetIdentity(value string) error {
+	return soc.setString(C.ZMQ_IDENTITY, value)
 }
 
 // Set multicast data rate
