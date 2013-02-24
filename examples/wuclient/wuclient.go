@@ -1,0 +1,45 @@
+//
+//  Weather update client
+//  Connects SUB socket to tcp://localhost:5556
+//  Collects weather updates and finds avg temp in zipcode
+//
+package main
+
+import (
+	"bytes"
+	"fmt"
+	zmq "github.com/pebbe/zmq3"
+	"os"
+	"strconv"
+)
+
+func main() {
+	context, _ := zmq.NewContext()
+
+	//  Socket to talk to server
+	fmt.Println("Collecting updates from weather server…")
+	subscriber, _ := context.NewSocket(zmq.SUB)
+	subscriber.Connect("tcp://localhost:5556")
+
+	//  Subscribe to zipcode, default is NYC, 10001
+	filter := "10001 "
+	if len(os.Args) > 1 {
+		filter = os.Args[1] + " "
+	}
+	subscriber.SetSubscribe(filter)
+
+	//  Process 100 updates
+	total_temp := 0
+	update_nbr := 0
+	for update_nbr < 100 {
+		msg, _ := subscriber.Recv(0)
+
+		if msgs := bytes.Fields(msg); len(msgs) > 1 {
+			if temperature, err := strconv.Atoi(string(msgs[1])); err == nil {
+				total_temp += temperature
+				update_nbr++
+			}
+		}
+	}
+	fmt.Printf("Average temperature for zipcode '%s' was %dF \n\n", filter, total_temp/update_nbr)
+}

@@ -18,6 +18,14 @@ import (
 	"unsafe"
 )
 
+//. Util
+
+func Version() (int, int, int) {
+	var major, minor, patch C.int
+	C.zmq_version(&major, &minor, &patch)
+	return int(major), int(minor), int(patch)
+}
+
 //. Context
 
 var (
@@ -111,8 +119,8 @@ type FlagType int
 
 const (
 	// Flags for (*Socket)Send(), (*Socket)Recv()
-	DONTWAIT    = FlagType(C.ZMQ_DONTWAIT)
-	ZMQ_SNDMORE = FlagType(C.ZMQ_SNDMORE)
+	DONTWAIT = FlagType(C.ZMQ_DONTWAIT)
+	SNDMORE  = FlagType(C.ZMQ_SNDMORE)
 )
 
 var (
@@ -209,4 +217,22 @@ func (soc *Socket) Send(data []byte, flags FlagType) (int, error) {
 		return int(size), err
 	}
 	return int(size), nil
+}
+
+//. Socket options
+
+func (soc *Socket) setString(opt C.int, s string) error {
+	if !soc.opened {
+		return errSocClosed
+	}
+	cs := C.CString(s)
+	defer C.free(unsafe.Pointer(cs))
+	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(cs), C.size_t(len(s))); i != 0 {
+		return err
+	}
+    return nil
+}
+
+func (soc *Socket) SetSubscribe(filter string) error {
+	return soc.setString(C.ZMQ_SUBSCRIBE, filter)
 }
