@@ -218,21 +218,3 @@ func (soc *Socket) Send(data []byte, flags FlagType) (int, error) {
 	}
 	return int(size), nil
 }
-
-//. Socket options
-
-func (soc *Socket) setString(opt C.int, s string) error {
-	if !soc.opened {
-		return errSocClosed
-	}
-	cs := C.CString(s)
-	defer C.free(unsafe.Pointer(cs))
-	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(cs), C.size_t(len(s))); i != 0 {
-		return err
-	}
-    return nil
-}
-
-func (soc *Socket) SetSubscribe(filter string) error {
-	return soc.setString(C.ZMQ_SUBSCRIBE, filter)
-}
