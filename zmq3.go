@@ -107,6 +107,14 @@ const (
 	PAIR   = SocketType(C.ZMQ_PAIR)
 )
 
+type FlagType int
+
+const (
+	// Flags for (*Socket)Send(), (*Socket)Recv()
+	DONTWAIT    = FlagType(C.ZMQ_DONTWAIT)
+	ZMQ_SNDMORE = FlagType(C.ZMQ_SNDMORE)
+)
+
 var (
 	errSocClosed = errors.New("Socket is closed")
 )
@@ -138,10 +146,67 @@ func (ctx *Context) NewSocket(t SocketType) (soc *Socket, err error) {
 func (soc *Socket) Close() error {
 	if soc.opened {
 		soc.opened = false
-		i, err := C.zmq_close(soc.soc)
-		if int(i) != 0 {
+		if i, err := C.zmq_close(soc.soc); int(i) != 0 {
 			return err
 		}
 	}
 	return nil
+}
+
+func (soc *Socket) Bind(endpoint string) error {
+	if !soc.opened {
+		return errSocClosed
+	}
+	s := C.CString(endpoint)
+	defer C.free(unsafe.Pointer(s))
+	if i, err := C.zmq_bind(soc.soc, s); int(i) != 0 {
+		return err
+	}
+	return nil
+}
+
+func (soc *Socket) Connect(endpoint string) error {
+	if !soc.opened {
+		return errSocClosed
+	}
+	s := C.CString(endpoint)
+	defer C.free(unsafe.Pointer(s))
+	if i, err := C.zmq_connect(soc.soc, s); int(i) != 0 {
+		return err
+	}
+	return nil
+}
+
+func (soc *Socket) Recv(flags FlagType) ([]byte, error) {
+	if !soc.opened {
+		return []byte{}, errSocClosed
+	}
+
+	var msg C.zmq_msg_t
+	if i, err := C.zmq_msg_init(&msg); i != 0 {
+		return []byte{}, err
+	}
+	defer C.zmq_msg_close(&msg)
+
+	size, err := C.zmq_msg_recv(&msg, soc.soc, C.int(flags))
+	if size < 0 {
+		return []byte{}, err
+	}
+	if size == 0 {
+		return []byte{}, nil
+	}
+	data := make([]byte, int(size))
+	C.memcpy(unsafe.Pointer(&data[0]), C.zmq_msg_data(&msg), C.size_t(size))
+	return data, nil
+}
+
+func (soc *Socket) Send(data []byte, flags FlagType) (int, error) {
+	if !soc.opened {
+		return -1, errSocClosed
+	}
+	size, err := C.zmq_send(soc.soc, unsafe.Pointer(&data[0]), C.size_t(len(data)), C.int(flags))
+	if size < 0 {
+		return int(size), err
+	}
+	return int(size), nil
 }
