@@ -125,6 +125,7 @@ func (ctx *Context) SetMaxSockets(n int) error {
 
 //. Sockets
 
+// Used by (*Context)NewSocket()
 type SocketType int
 
 const (
@@ -143,6 +144,7 @@ const (
 	PAIR   = SocketType(C.ZMQ_PAIR)
 )
 
+// Used by  (*Socket)Send() and (*Socket)Recv()
 type FlagType int
 
 const (
