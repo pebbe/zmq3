@@ -11,6 +11,7 @@ import (
 	zmq "github.com/pebbe/zmq3"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -41,5 +42,5 @@ func main() {
 			}
 		}
 	}
-	fmt.Printf("Average temperature for zipcode '%s' was %dF \n\n", filter, total_temp/update_nbr)
+	fmt.Printf("Average temperature for zipcode '%s' was %dF \n\n", strings.TrimSpace(filter), total_temp/update_nbr)
 }
