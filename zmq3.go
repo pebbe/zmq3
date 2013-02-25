@@ -1,4 +1,8 @@
-// A Go interface to ZeroMQ version 3.
+/* A Go interface to ZeroMQ version 3.
+
+For the ØMQ API Reference: http://api.zeromq.org/
+
+*/
 package zmq3
 
 /*
@@ -130,7 +134,7 @@ type SocketType int
 
 const (
 	// Constants for (*Context)NewSocket()
-	// See `zmq_socket` in the 0MQ Manual.
+	// See `zmq_socket` in the ØMQ API Reference.
 	REQ    = SocketType(C.ZMQ_REQ)
 	REP    = SocketType(C.ZMQ_REP)
 	DEALER = SocketType(C.ZMQ_DEALER)
@@ -149,7 +153,7 @@ type FlagType int
 
 const (
 	// Flags for (*Socket)Send(), (*Socket)Recv()
-	// See `zmq_send` and `zmq_msg_recv` in the 0MQ Manual.
+	// See `zmq_send` and `zmq_msg_recv` in the ØMQ API Reference.
 	DONTWAIT = FlagType(C.ZMQ_DONTWAIT)
 	SNDMORE  = FlagType(C.ZMQ_SNDMORE)
 )
@@ -161,7 +165,7 @@ var (
 /*
 Socket functions starting with `Set` or `Get` are used for setting and
 getting socket options. See `zmq_setsockopt` and `zmq_getsockopt` in
-the 0MQ Manual for detailed descriptions of these options.
+the ØMQ API Reference for detailed descriptions of these options.
 */
 type Socket struct {
 	ctx    *Context
@@ -172,7 +176,7 @@ type Socket struct {
 /*
 Create 0MQ socket.
 
-For a description of socket types, see `zmq_socket` in the 0MQ Manual.
+For a description of socket types, see `zmq_socket` in the ØMQ API Reference.
 */
 func (ctx *Context) NewSocket(t SocketType) (soc *Socket, err error) {
 	soc = &Socket{}
@@ -206,7 +210,7 @@ func (soc *Socket) Close() error {
 /*
 Accept incoming connections on a socket.
 
-For a description of endpoint, see `zmq_bind` in the 0MQ Manual.
+For a description of endpoint, see `zmq_bind` in the ØMQ API Reference.
 */
 func (soc *Socket) Bind(endpoint string) error {
 	if !soc.opened {
@@ -223,7 +227,7 @@ func (soc *Socket) Bind(endpoint string) error {
 /*
 Create outgoing connection from socket.
 
-For a description of endpoint, see `zmq_connect` in the 0MQ Manual.
+For a description of endpoint, see `zmq_connect` in the ØMQ API Reference.
 */
 func (soc *Socket) Connect(endpoint string) error {
 	if !soc.opened {
@@ -240,7 +244,7 @@ func (soc *Socket) Connect(endpoint string) error {
 /*
 Receive a message part from a socket.
 
-For a description of flags, see `zmq_msg_recv` in the 0MQ Manual.
+For a description of flags, see `zmq_msg_recv` in the ØMQ API Reference.
 */
 func (soc *Socket) Recv(flags FlagType) ([]byte, error) {
 	if !soc.opened {
@@ -268,7 +272,7 @@ func (soc *Socket) Recv(flags FlagType) ([]byte, error) {
 /*
 Send a message part on a socket.
 
-For a description of flags, see `zmq_send` in the 0MQ Manual.
+For a description of flags, see `zmq_send` in the ØMQ API Reference.
 */
 func (soc *Socket) Send(data []byte, flags FlagType) (int, error) {
 	if !soc.opened {
