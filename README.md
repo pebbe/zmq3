@@ -13,7 +13,7 @@ A Go interface to [ZeroMQ](http://www.zeromq.org/) version 3.
 At the moment, the basics are here, and the first few examples from
 [ØMQ - The Guide](http://zguide.zeromq.org/page:all) are re-implemented
 successfully. You can find these implementations in the
-[examples](https://github.com/pebbe/gozmq/tree/master/examples).
+[examples](https://github.com/pebbe/zmq3/tree/master/examples).
 
 The next goal is to re-implement all examples from The Guide, and expand
 the library as necessary.
