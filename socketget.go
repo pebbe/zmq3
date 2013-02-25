@@ -3,8 +3,7 @@ package zmq3
 /*
 #cgo pkg-config: libzmq
 #include <zmq.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 */
 import "C"
 
@@ -40,7 +39,7 @@ func (soc *Socket) getInt64(opt C.int) (int64, error) {
 	if !soc.opened {
 		return 0, errSocClosed
 	}
-	value := C.longlong(0)
+	value := C.int64_t(0)
 	size := C.size_t(unsafe.Sizeof(value))
 	if i, err := C.zmq_getsockopt(soc.soc, opt, unsafe.Pointer(&value), &size); i != 0 {
 		return 0, errget(err)
@@ -52,7 +51,7 @@ func (soc *Socket) getUInt64(opt C.int) (uint64, error) {
 	if !soc.opened {
 		return 0, errSocClosed
 	}
-	value := C.ulonglong(0)
+	value := C.uint64_t(0)
 	size := C.size_t(unsafe.Sizeof(value))
 	if i, err := C.zmq_getsockopt(soc.soc, opt, unsafe.Pointer(&value), &size); i != 0 {
 		return 0, errget(err)

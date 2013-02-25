@@ -3,8 +3,8 @@ package zmq3
 /*
 #cgo pkg-config: libzmq
 #include <zmq.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 */
 import "C"
 
@@ -28,7 +28,8 @@ func (soc *Socket) setInt(opt C.int, value int) error {
 	if !soc.opened {
 		return errSocClosed
 	}
-	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))); i != 0 {
+	val := C.int(value)
+	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); i != 0 {
 		return errget(err)
 	}
     return nil
@@ -38,7 +39,8 @@ func (soc *Socket) setInt64(opt C.int, value int64) error {
 	if !soc.opened {
 		return errSocClosed
 	}
-	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))); i != 0 {
+	val := C.int64_t(value)
+	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); i != 0 {
 		return errget(err)
 	}
     return nil
@@ -48,7 +50,8 @@ func (soc *Socket) setUInt64(opt C.int, value uint64) error {
 	if !soc.opened {
 		return errSocClosed
 	}
-	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&value), C.size_t(unsafe.Sizeof(value))); i != 0 {
+	val := C.uint64_t(value)
+	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); i != 0 {
 		return errget(err)
 	}
     return nil
