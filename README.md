@@ -1,6 +1,6 @@
 A Go interface to ZeroMQ version 3.
 
-To do: a lot
+The basics are there. More advanced features will follow.
 
 ## Install
 

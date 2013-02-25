@@ -9,7 +9,7 @@ package zmq3
 import "C"
 
 
-// Retrieve file descriptor associated with the socket
+// ZMQ_FD: Retrieve file descriptor associated with the socket
 func (soc *Socket) GetFd() (int, error) {
 	return soc.getInt(C.ZMQ_FD)
 }

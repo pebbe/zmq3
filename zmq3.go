@@ -15,11 +15,21 @@ import "C"
 import (
 	"errors"
 	"runtime"
+	"syscall"
 	"unsafe"
 )
 
 //. Util
 
+func errget(err error) error {
+	errno, ok := err.(syscall.Errno)
+	if ok && errno >= C.ZMQ_HAUSNUMERO {
+		return errors.New(C.GoString(C.zmq_strerror(C.int(errno))))
+	}
+	return err
+}
+
+// Report 0MQ library version.
 func Version() (int, int, int) {
 	var major, minor, patch C.int
 	C.zmq_version(&major, &minor, &patch)
@@ -37,11 +47,12 @@ type Context struct {
 	opened bool
 }
 
+// Create new 0MQ context.
 func NewContext() (ctx *Context, err error) {
 	ctx = &Context{}
 	c, e := C.zmq_ctx_new()
 	if c == nil {
-		err = e
+		err = errget(e)
 	} else {
 		ctx.ctx = c
 		ctx.opened = true
@@ -50,12 +61,13 @@ func NewContext() (ctx *Context, err error) {
 	return
 }
 
+// If not called explicitly, the context will be closed on garbage collection
 func (ctx *Context) Close() error {
 	if ctx.opened {
 		ctx.opened = false
 		i, err := C.zmq_ctx_destroy(ctx.ctx)
 		if int(i) != 0 {
-			return err
+			return errget(err)
 		}
 	}
 	return nil
@@ -66,13 +78,15 @@ func (ctx *Context) getOption(o C.int) (int, error) {
 		return -1, errCtxClosed
 	}
 	n, err := C.zmq_ctx_get(ctx.ctx, o)
-	return int(n), err
+	return int(n), errget(err)
 }
 
+// Returns the size of the 0MQ thread pool for this context.
 func (ctx *Context) GetIoThreads() (int, error) {
 	return ctx.getOption(C.ZMQ_IO_THREADS)
 }
 
+// Returns the maximum number of sockets allowed for this context.
 func (ctx *Context) GetMaxSockets() (int, error) {
 	return ctx.getOption(C.ZMQ_MAX_SOCKETS)
 }
@@ -83,15 +97,28 @@ func (ctx *Context) setOption(o C.int, n int) error {
 	}
 	i, err := C.zmq_ctx_set(ctx.ctx, o, C.int(n))
 	if int(i) != 0 {
-		return err
+		return errget(err)
 	}
 	return nil
 }
 
+/*
+Specifies the size of the 0MQ thread pool to handle I/O operations. If
+your application is using only the inproc transport for messaging you may set this to zero,
+otherwise set it to at least one. This option only applies before creating any sockets on the
+context.
+
+Default value   1
+*/
 func (ctx *Context) SetIoThreads(n int) error {
 	return ctx.setOption(C.ZMQ_IO_THREADS, n)
 }
 
+/*
+Sets the maximum number of sockets allowed on the context.
+
+Default value   1024
+*/
 func (ctx *Context) SetMaxSockets(n int) error {
 	return ctx.setOption(C.ZMQ_MAX_SOCKETS, n)
 }
@@ -102,6 +129,7 @@ type SocketType int
 
 const (
 	// Constants for (*Context)NewSocket()
+	// See `zmq_socket` in the 0MQ Manual.
 	REQ    = SocketType(C.ZMQ_REQ)
 	REP    = SocketType(C.ZMQ_REP)
 	DEALER = SocketType(C.ZMQ_DEALER)
@@ -119,6 +147,7 @@ type FlagType int
 
 const (
 	// Flags for (*Socket)Send(), (*Socket)Recv()
+	// See `zmq_send` and `zmq_msg_recv` in the 0MQ Manual.
 	DONTWAIT = FlagType(C.ZMQ_DONTWAIT)
 	SNDMORE  = FlagType(C.ZMQ_SNDMORE)
 )
@@ -127,12 +156,22 @@ var (
 	errSocClosed = errors.New("Socket is closed")
 )
 
+/*
+Socket functions starting with `Set` or `Get` are used for setting and
+getting socket options. See `zmq_setsockopt` and `zmq_getsockopt` in
+the 0MQ Manual for detailed descriptions of these options.
+*/
 type Socket struct {
 	ctx    *Context
 	soc    unsafe.Pointer
 	opened bool
 }
 
+/*
+Create 0MQ socket.
+
+For a description of socket types, see `zmq_socket` in the 0MQ Manual.
+*/
 func (ctx *Context) NewSocket(t SocketType) (soc *Socket, err error) {
 	soc = &Socket{}
 	if !ctx.opened {
@@ -141,7 +180,7 @@ func (ctx *Context) NewSocket(t SocketType) (soc *Socket, err error) {
 	}
 	s, e := C.zmq_socket(ctx.ctx, C.int(t))
 	if s == nil {
-		err = e
+		err = errget(e)
 	} else {
 		soc.ctx = ctx
 		soc.soc = s
@@ -151,16 +190,22 @@ func (ctx *Context) NewSocket(t SocketType) (soc *Socket, err error) {
 	return
 }
 
+// If not called explicitly, the socket will be closed on garbage collection
 func (soc *Socket) Close() error {
 	if soc.opened {
 		soc.opened = false
 		if i, err := C.zmq_close(soc.soc); int(i) != 0 {
-			return err
+			return errget(err)
 		}
 	}
 	return nil
 }
 
+/*
+Accept incoming connections on a socket.
+
+For a description of endpoint, see `zmq_bind` in the 0MQ Manual.
+*/
 func (soc *Socket) Bind(endpoint string) error {
 	if !soc.opened {
 		return errSocClosed
@@ -168,11 +213,16 @@ func (soc *Socket) Bind(endpoint string) error {
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
 	if i, err := C.zmq_bind(soc.soc, s); int(i) != 0 {
-		return err
+		return errget(err)
 	}
 	return nil
 }
 
+/*
+Create outgoing connection from socket.
+
+For a description of endpoint, see `zmq_connect` in the 0MQ Manual.
+*/
 func (soc *Socket) Connect(endpoint string) error {
 	if !soc.opened {
 		return errSocClosed
@@ -180,11 +230,16 @@ func (soc *Socket) Connect(endpoint string) error {
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
 	if i, err := C.zmq_connect(soc.soc, s); int(i) != 0 {
-		return err
+		return errget(err)
 	}
 	return nil
 }
 
+/*
+Receive a message part from a socket.
+
+For a description of flags, see `zmq_msg_recv` in the 0MQ Manual.
+*/
 func (soc *Socket) Recv(flags FlagType) ([]byte, error) {
 	if !soc.opened {
 		return []byte{}, errSocClosed
@@ -192,13 +247,13 @@ func (soc *Socket) Recv(flags FlagType) ([]byte, error) {
 
 	var msg C.zmq_msg_t
 	if i, err := C.zmq_msg_init(&msg); i != 0 {
-		return []byte{}, err
+		return []byte{}, errget(err)
 	}
 	defer C.zmq_msg_close(&msg)
 
 	size, err := C.zmq_msg_recv(&msg, soc.soc, C.int(flags))
 	if size < 0 {
-		return []byte{}, err
+		return []byte{}, errget(err)
 	}
 	if size == 0 {
 		return []byte{}, nil
@@ -208,13 +263,18 @@ func (soc *Socket) Recv(flags FlagType) ([]byte, error) {
 	return data, nil
 }
 
+/*
+Send a message part on a socket.
+
+For a description of flags, see `zmq_send` in the 0MQ Manual.
+*/
 func (soc *Socket) Send(data []byte, flags FlagType) (int, error) {
 	if !soc.opened {
 		return -1, errSocClosed
 	}
 	size, err := C.zmq_send(soc.soc, unsafe.Pointer(&data[0]), C.size_t(len(data)), C.int(flags))
 	if size < 0 {
-		return int(size), err
+		return int(size), errget(err)
 	}
 	return int(size), nil
 }
