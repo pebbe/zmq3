@@ -8,6 +8,7 @@ package zmq3
 import "C"
 
 import (
+	"time"
 	"unsafe"
 )
 
@@ -62,15 +63,17 @@ func (soc *Socket) getUInt64(opt C.int) (uint64, error) {
 // ZMQ_TYPE: Retrieve socket type
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc3
-func (soc *Socket) GetType() (int, error) {
-	return soc.getInt(C.ZMQ_TYPE)
+func (soc *Socket) GetType() (Type, error) {
+	v, err := soc.getInt(C.ZMQ_TYPE)
+	return Type(v), err
 }
 
 // ZMQ_RCVMORE: More message data parts to follow
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc4
-func (soc *Socket) GetRcvmore() (int, error) {
-	return soc.getInt(C.ZMQ_RCVMORE)
+func (soc *Socket) GetRcvmore() (bool, error) {
+	v, err := soc.getInt(C.ZMQ_RCVMORE)
+	return v != 0, err
 }
 
 // ZMQ_SNDHWM: Retrieves high water mark for outbound messages
@@ -111,8 +114,9 @@ func (soc *Socket) GetRate() (int, error) {
 // ZMQ_RECOVERY_IVL: Get multicast recovery interval
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc10
-func (soc *Socket) GetRecoveryIvl() (int, error) {
-	return soc.getInt(C.ZMQ_RECOVERY_IVL)
+func (soc *Socket) GetRecoveryIvl() (time.Duration, error) {
+	v, err := soc.getInt(C.ZMQ_RECOVERY_IVL)
+	return time.Duration(v) * time.Millisecond, err
 }
 
 // ZMQ_SNDBUF: Retrieve kernel transmit buffer size
@@ -131,23 +135,36 @@ func (soc *Socket) GetRcvbuf() (int, error) {
 
 // ZMQ_LINGER: Retrieve linger period for socket shutdown
 //
+// Returns time.Duration(-1) for infinite
+//
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc13
-func (soc *Socket) GetLinger() (int, error) {
-	return soc.getInt(C.ZMQ_LINGER)
+func (soc *Socket) GetLinger() (time.Duration, error) {
+	v, err := soc.getInt(C.ZMQ_LINGER)
+	if v < 0 {
+		return time.Duration(-1), err
+	}
+	return time.Duration(v) * time.Millisecond, err
 }
 
 // ZMQ_RECONNECT_IVL: Retrieve reconnection interval
 //
+// Returns time.Duration(-1) for no reconnection
+//
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc14
-func (soc *Socket) GetReconnectIvl() (int, error) {
-	return soc.getInt(C.ZMQ_RECONNECT_IVL)
+func (soc *Socket) GetReconnectIvl() (time.Duration, error) {
+	v, err := soc.getInt(C.ZMQ_RECONNECT_IVL)
+	if v < 0 {
+		return time.Duration(-1), err
+	}
+	return time.Duration(v) * time.Millisecond, err
 }
 
 // ZMQ_RECONNECT_IVL_MAX: Retrieve maximum reconnection interval
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc15
-func (soc *Socket) GetReconnectIvlMax() (int, error) {
-	return soc.getInt(C.ZMQ_RECONNECT_IVL_MAX)
+func (soc *Socket) GetReconnectIvlMax() (time.Duration, error) {
+	v, err := soc.getInt(C.ZMQ_RECONNECT_IVL_MAX)
+	return time.Duration(v) * time.Millisecond, err
 }
 
 // ZMQ_BACKLOG: Retrieve maximum length of the queue of outstanding connections
@@ -173,30 +190,44 @@ func (soc *Socket) GetMulticastHops() (int, error) {
 
 // ZMQ_RCVTIMEO: Maximum time before a socket operation returns with EAGAIN
 //
+// Returns time.Duration(-1) for infinite
+//
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc19
-func (soc *Socket) GetRcvtimeo() (int, error) {
-	return soc.getInt(C.ZMQ_RCVTIMEO)
+func (soc *Socket) GetRcvtimeo() (time.Duration, error) {
+	v, err := soc.getInt(C.ZMQ_RCVTIMEO)
+	if v < 0 {
+		return time.Duration(-1), err
+	}
+	return time.Duration(v) * time.Millisecond, err
 }
 
 // ZMQ_SNDTIMEO: Maximum time before a socket operation returns with EAGAIN
 //
+// Returns time.Duration(-1) for infinite
+//
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc20
-func (soc *Socket) GetSndtimeo() (int, error) {
-	return soc.getInt(C.ZMQ_SNDTIMEO)
+func (soc *Socket) GetSndtimeo() (time.Duration, error) {
+	v, err := soc.getInt(C.ZMQ_SNDTIMEO)
+	if v < 0 {
+		return time.Duration(-1), err
+	}
+	return time.Duration(v) * time.Millisecond, err
 }
 
 // ZMQ_IPV4ONLY: Retrieve IPv4-only socket override status
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc21
-func (soc *Socket) GetIpv4only() (int, error) {
-	return soc.getInt(C.ZMQ_IPV4ONLY)
+func (soc *Socket) GetIpv4only() (bool, error) {
+	v, err := soc.getInt(C.ZMQ_IPV4ONLY)
+	return v != 0, err
 }
 
 // ZMQ_DELAY_ATTACH_ON_CONNECT: Retrieve attach-on-connect value
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc22
-func (soc *Socket) GetDelayAttachOnConnect() (int, error) {
-	return soc.getInt(C.ZMQ_DELAY_ATTACH_ON_CONNECT)
+func (soc *Socket) GetDelayAttachOnConnect() (bool, error) {
+	v, err := soc.getInt(C.ZMQ_DELAY_ATTACH_ON_CONNECT)
+	return v != 0, err
 }
 
 // ZMQ_FD: Retrieve file descriptor associated with the socket
@@ -205,8 +236,9 @@ func (soc *Socket) GetDelayAttachOnConnect() (int, error) {
 // ZMQ_EVENTS: Retrieve socket event state
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc24
-func (soc *Socket) GetEvents() (int, error) {
-	return soc.getInt(C.ZMQ_EVENTS)
+func (soc *Socket) GetEvents() (EventState, error) {
+	v, err :=  soc.getInt(C.ZMQ_EVENTS)
+	return EventState(v), err
 }
 
 // ZMQ_LAST_ENDPOINT: Retrieve the last endpoint set
