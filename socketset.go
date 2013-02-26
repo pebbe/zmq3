@@ -9,6 +9,7 @@ package zmq3
 import "C"
 
 import (
+	"time"
 	"unsafe"
 )
 
@@ -21,7 +22,7 @@ func (soc *Socket) setString(opt C.int, s string) error {
 	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(cs), C.size_t(len(s))); i != 0 {
 		return errget(err)
 	}
-    return nil
+	return nil
 }
 
 func (soc *Socket) setInt(opt C.int, value int) error {
@@ -32,7 +33,7 @@ func (soc *Socket) setInt(opt C.int, value int) error {
 	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); i != 0 {
 		return errget(err)
 	}
-    return nil
+	return nil
 }
 
 func (soc *Socket) setInt64(opt C.int, value int64) error {
@@ -43,7 +44,7 @@ func (soc *Socket) setInt64(opt C.int, value int64) error {
 	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); i != 0 {
 		return errget(err)
 	}
-    return nil
+	return nil
 }
 
 func (soc *Socket) setUInt64(opt C.int, value uint64) error {
@@ -54,7 +55,7 @@ func (soc *Socket) setUInt64(opt C.int, value uint64) error {
 	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); i != 0 {
 		return errget(err)
 	}
-    return nil
+	return nil
 }
 
 // ZMQ_SNDHWM: Set high water mark for outbound messages
@@ -109,8 +110,9 @@ func (soc *Socket) SetRate(value int) error {
 // ZMQ_RECOVERY_IVL: Set multicast recovery interval
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc10
-func (soc *Socket) SetRecoveryIvl(value int) error {
-	return soc.setInt(C.ZMQ_RECOVERY_IVL, value)
+func (soc *Socket) SetRecoveryIvl(value time.Duration) error {
+	val := int(value / time.Millisecond)
+	return soc.setInt(C.ZMQ_RECOVERY_IVL, val)
 }
 
 // ZMQ_SNDBUF: Set kernel transmit buffer size
@@ -129,23 +131,36 @@ func (soc *Socket) SetRcvbuf(value int) error {
 
 // ZMQ_LINGER: Set linger period for socket shutdown
 //
+// Use -1 for infinite
+//
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc13
-func (soc *Socket) SetLinger(value int) error {
-	return soc.setInt(C.ZMQ_LINGER, value)
+func (soc *Socket) SetLinger(value time.Duration) error {
+	val := int(value / time.Millisecond)
+	if value == -1 {
+		val = -1
+	}
+	return soc.setInt(C.ZMQ_LINGER, val)
 }
 
 // ZMQ_RECONNECT_IVL: Set reconnection interval
 //
+// Use -1 for no reconnection
+//
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc14
-func (soc *Socket) SetReconnectIvl(value int) error {
-	return soc.setInt(C.ZMQ_RECONNECT_IVL, value)
+func (soc *Socket) SetReconnectIvl(value time.Duration) error {
+	val := int(value / time.Millisecond)
+	if value == -1 {
+		val = -1
+	}
+	return soc.setInt(C.ZMQ_RECONNECT_IVL, val)
 }
 
 // ZMQ_RECONNECT_IVL_MAX: Set maximum reconnection interval
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc15
-func (soc *Socket) SetReconnectIvlMax(value int) error {
-	return soc.setInt(C.ZMQ_RECONNECT_IVL_MAX, value)
+func (soc *Socket) SetReconnectIvlMax(value time.Duration) error {
+	val := int(value / time.Millisecond)
+	return soc.setInt(C.ZMQ_RECONNECT_IVL_MAX, val)
 }
 
 // ZMQ_BACKLOG: Set maximum length of the queue of outstanding connections
@@ -171,30 +186,50 @@ func (soc *Socket) SetMulticastHops(value int) error {
 
 // ZMQ_RCVTIMEO: Maximum time before a recv operation returns with EAGAIN
 //
+// Use -1 for infinite
+//
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc19
-func (soc *Socket) SetRcvtimeo(value int) error {
-	return soc.setInt(C.ZMQ_RCVTIMEO, value)
+func (soc *Socket) SetRcvtimeo(value time.Duration) error {
+	val := int(value / time.Millisecond)
+	if value == -1 {
+		val = -1
+	}
+	return soc.setInt(C.ZMQ_RCVTIMEO, val)
 }
 
 // ZMQ_SNDTIMEO: Maximum time before a send operation returns with EAGAIN
 //
+// Use -1 for infinite
+//
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc20
-func (soc *Socket) SetSndtimeo(value int) error {
-	return soc.setInt(C.ZMQ_SNDTIMEO, value)
+func (soc *Socket) SetSndtimeo(value time.Duration) error {
+	val := int(value / time.Millisecond)
+	if value == -1 {
+		val = -1
+	}
+	return soc.setInt(C.ZMQ_SNDTIMEO, val)
 }
 
 // ZMQ_IPV4ONLY: Use IPv4-only sockets
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc21
-func (soc *Socket) SetIpv4only(value int) error {
-	return soc.setInt(C.ZMQ_IPV4ONLY, value)
+func (soc *Socket) SetIpv4only(value bool) error {
+	val := 0
+	if value {
+		val = 1
+	}
+	return soc.setInt(C.ZMQ_IPV4ONLY, val)
 }
 
 // ZMQ_DELAY_ATTACH_ON_CONNECT: Accept messages only when connections are made
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc22
-func (soc *Socket) SetDelayAttachOnConnect(value int) error {
-	return soc.setInt(C.ZMQ_DELAY_ATTACH_ON_CONNECT, value)
+func (soc *Socket) SetDelayAttachOnConnect(value bool) error {
+	val := int(0)
+	if value {
+		val = 1
+	}
+	return soc.setInt(C.ZMQ_DELAY_ATTACH_ON_CONNECT, val)
 }
 
 // ZMQ_ROUTER_MANDATORY: accept only routable messages on ROUTER sockets
