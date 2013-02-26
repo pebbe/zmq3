@@ -161,6 +161,8 @@ const (
 type EventState int
 
 const (
+	// Flags for (*Socket)GetEvents()
+	// See: http://api.zeromq.org/3-2:zmq-getsockopt#toc24
 	POLLIN  = EventState(C.ZMQ_POLLIN)
 	POLLOUT = EventState(C.ZMQ_POLLOUT)
 )
