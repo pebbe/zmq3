@@ -151,8 +151,8 @@ type Flag int
 
 const (
 	// Flags for (*Socket)Send(), (*Socket)Recv()
-	// See zmq_send: http://api.zeromq.org/3-2:zmq-send#toc2
-	// See zmq_msg_recv: http://api.zeromq.org/3-2:zmq-msg-recv#toc2
+	// For Send, see: http://api.zeromq.org/3-2:zmq-send#toc2
+	// For Recv, see: http://api.zeromq.org/3-2:zmq-msg-recv#toc2
 	DONTWAIT = Flag(C.ZMQ_DONTWAIT)
 	SNDMORE  = Flag(C.ZMQ_SNDMORE)
 )
