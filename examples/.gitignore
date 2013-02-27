@@ -1,8 +1,9 @@
 hwclient/hwclient
 hwserver/hwserver
+mspoller/mspoller
+msreader/msreader
 tasksink/tasksink
 taskvent/taskvent
 taskwork/taskwork
 wuclient/wuclient
 wuserver/wuserver
-msreader/msreader

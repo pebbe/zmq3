@@ -1,6 +1,12 @@
 // A Go interface to ZeroMQ version 3.
 //
 // http://www.zeromq.org/
+//
+// Although you can check for event states POLLIN and POLLOUT,
+// the ZeroMQ function zmq_poll() is not available by this
+// package. You can use Go's select statement with the same
+// effect.
+
 package zmq3
 
 /*
