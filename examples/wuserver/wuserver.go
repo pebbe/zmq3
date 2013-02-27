@@ -33,6 +33,6 @@ func main() {
 
 		//  Send message to all subscribers
 		msg := fmt.Sprintf("%05d %d %d", zipcode, temperature, relhumidity)
-		publisher.Send([]byte(msg), 0)
+		publisher.Send(msg, 0)
 	}
 }

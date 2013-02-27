@@ -21,13 +21,13 @@ func main() {
 	for {
 		//  Wait for next request from client
 		msg, _ := responder.Recv(0)
-		fmt.Println("Received ", string(msg))
+		fmt.Println("Received ", msg)
 
 		//  Do some 'work'
 		time.Sleep(time.Second)
 
 		//  Send reply back to client
 		reply := "World"
-		responder.Send([]byte(reply), 0)
+		responder.Send(reply, 0)
 	}
 }

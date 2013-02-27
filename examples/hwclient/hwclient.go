@@ -22,10 +22,10 @@ func main() {
 		// send hello
 		msg := fmt.Sprintf("Hello %d", request_nbr)
 		fmt.Println("Sending ", msg)
-		requester.Send([]byte(msg), 0)
+		requester.Send(msg, 0)
 
 		// Wait for reply:
 		reply, _ := requester.Recv(0)
-		fmt.Println("Received ", string(reply))
+		fmt.Println("Received ", reply)
 	}
 }

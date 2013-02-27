@@ -254,7 +254,17 @@ Receive a message part from a socket.
 
 For a description of flags, see: http://api.zeromq.org/3-2:zmq-msg-recv#toc2
 */
-func (soc *Socket) Recv(flags Flag) ([]byte, error) {
+func (soc *Socket) Recv(flags Flag) (string, error) {
+	b, err := soc.RecvBytes(flags)
+	return string(b), err
+}
+
+/*
+Receive a message part from a socket.
+
+For a description of flags, see: http://api.zeromq.org/3-2:zmq-msg-recv#toc2
+*/
+func (soc *Socket) RecvBytes(flags Flag) ([]byte, error) {
 	if !soc.opened {
 		return []byte{}, errSocClosed
 	}
@@ -282,7 +292,16 @@ Send a message part on a socket.
 
 For a description of flags, see: http://api.zeromq.org/3-2:zmq-send#toc2
 */
-func (soc *Socket) Send(data []byte, flags Flag) (int, error) {
+func (soc *Socket) Send(data string, flags Flag) (int, error) {
+	return soc.SendBytes([]byte(data), flags)
+}
+
+/*
+Send a message part on a socket.
+
+For a description of flags, see: http://api.zeromq.org/3-2:zmq-send#toc2
+*/
+func (soc *Socket) SendBytes(data []byte, flags Flag) (int, error) {
 	if !soc.opened {
 		return -1, errSocClosed
 	}
