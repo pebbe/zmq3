@@ -6,7 +6,6 @@
 // the ZeroMQ function zmq_poll() is not available by this
 // package. You can use Go's select statement with the same
 // effect.
-
 package zmq3
 
 /*
