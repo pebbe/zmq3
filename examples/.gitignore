@@ -1,4 +1,7 @@
 hwclient/hwclient
 hwserver/hwserver
+tasksink/tasksink
+taskvent/taskvent
+taskwork/taskwork
 wuclient/wuclient
 wuserver/wuserver
