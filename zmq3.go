@@ -286,7 +286,11 @@ func (soc *Socket) Send(data []byte, flags Flag) (int, error) {
 	if !soc.opened {
 		return -1, errSocClosed
 	}
-	size, err := C.zmq_send(soc.soc, unsafe.Pointer(&data[0]), C.size_t(len(data)), C.int(flags))
+	d := data
+	if len(data) == 0 {
+		d = []byte{0}
+	}
+	size, err := C.zmq_send(soc.soc, unsafe.Pointer(&d[0]), C.size_t(len(data)), C.int(flags))
 	if size < 0 {
 		return int(size), errget(err)
 	}
