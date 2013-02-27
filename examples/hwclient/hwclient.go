@@ -12,10 +12,12 @@ import (
 
 func main() {
 	context, _ := zmq.NewContext()
+	defer context.Close()
 
 	//  Socket to talk to server
 	fmt.Println("Connecting to hello world server…")
 	requester, _ := context.NewSocket(zmq.REQ)
+	defer requester.Close()
 	requester.Connect("tcp://localhost:5555")
 
 	for request_nbr := 0; request_nbr != 10; request_nbr++ {

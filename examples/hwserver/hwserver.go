@@ -13,9 +13,11 @@ import (
 
 func main() {
 	context, _ := zmq.NewContext()
+	defer context.Close()
 
 	//  Socket to talk to clients
 	responder, _ := context.NewSocket(zmq.REP)
+	defer responder.Close()
 	responder.Bind("tcp://*:5555")
 
 	for {

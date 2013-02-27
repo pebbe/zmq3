@@ -14,7 +14,9 @@ import (
 func main() {
 	//  Prepare our context and socket
 	context, _ := zmq.NewContext()
+	defer context.Close()
 	receiver, _ := context.NewSocket(zmq.PULL)
+	defer receiver.Close()
 	receiver.Bind("tcp://*:5558")
 
 	//  Wait for start of batch

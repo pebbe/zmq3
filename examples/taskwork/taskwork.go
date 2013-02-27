@@ -16,13 +16,16 @@ import (
 
 func main() {
 	context, _ := zmq.NewContext()
+	defer context.Close()
 
 	//  Socket to receive messages on
 	receiver, _ := context.NewSocket(zmq.PULL)
+	defer receiver.Close()
 	receiver.Connect("tcp://localhost:5557")
 
 	//  Socket to send messages to
 	sender, _ := context.NewSocket(zmq.PUSH)
+	defer sender.Close()
 	sender.Connect("tcp://localhost:5558")
 
 	//  Process tasks forever

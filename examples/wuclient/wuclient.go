@@ -15,10 +15,12 @@ import (
 
 func main() {
 	context, _ := zmq.NewContext()
+	defer context.Close()
 
 	//  Socket to talk to server
 	fmt.Println("Collecting updates from weather server…")
 	subscriber, _ := context.NewSocket(zmq.SUB)
+	defer subscriber.Close()
 	subscriber.Connect("tcp://localhost:5556")
 
 	//  Subscribe to zipcode, default is NYC, 10001
