@@ -9,7 +9,6 @@
 package zmq3
 
 /*
-#cgo pkg-config: libzmq
 #include <zmq.h>
 #include <stdlib.h>
 #include <string.h>

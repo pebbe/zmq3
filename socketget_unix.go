@@ -3,7 +3,6 @@
 package zmq3
 
 /*
-#cgo pkg-config: libzmq
 #include <zmq.h>
 */
 import "C"
