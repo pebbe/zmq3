@@ -238,6 +238,23 @@ func (soc *Socket) Bind(endpoint string) error {
 }
 
 /*
+Stop accepting connections on a socket.
+
+For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-bind#toc2
+*/
+func (soc *Socket) Unbind(endpoint string) error {
+	if !soc.opened {
+		return errSocClosed
+	}
+	s := C.CString(endpoint)
+	defer C.free(unsafe.Pointer(s))
+	if i, err := C.zmq_unbind(soc.soc, s); int(i) != 0 {
+		return errget(err)
+	}
+	return nil
+}
+
+/*
 Create outgoing connection from socket.
 
 For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-connect#toc2
@@ -249,6 +266,23 @@ func (soc *Socket) Connect(endpoint string) error {
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
 	if i, err := C.zmq_connect(soc.soc, s); int(i) != 0 {
+		return errget(err)
+	}
+	return nil
+}
+
+/*
+Disconnect a socket.
+
+For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-connect#toc2
+*/
+func (soc *Socket) Disconnect(endpoint string) error {
+	if !soc.opened {
+		return errSocClosed
+	}
+	s := C.CString(endpoint)
+	defer C.free(unsafe.Pointer(s))
+	if i, err := C.zmq_disconnect(soc.soc, s); int(i) != 0 {
 		return errget(err)
 	}
 	return nil
