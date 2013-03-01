@@ -2,6 +2,9 @@ hwclient/hwclient
 hwserver/hwserver
 mspoller/mspoller
 msreader/msreader
+rrbroker/rrbroker
+rrclient/rrclient
+rrworker/rrworker
 tasksink/tasksink
 taskvent/taskvent
 taskwork/taskwork
