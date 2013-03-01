@@ -1,5 +1,6 @@
 hwclient/hwclient
 hwserver/hwserver
+msgqueue/msgqueue
 mspoller/mspoller
 msreader/msreader
 rrbroker/rrbroker

@@ -320,3 +320,26 @@ func (soc *Socket) SendBytes(data []byte, flags Flag) (int, error) {
 	}
 	return int(size), nil
 }
+
+/*
+Start start built-in ØMQ proxy
+
+See: http://api.zeromq.org/3-2:zmq-proxy
+*/
+func Proxy(frontend, backend, capture *Socket) error {
+	if !frontend.opened {
+		return errSocClosed
+	}
+	if !backend.opened {
+		return errSocClosed
+	}
+	if capture != nil && !capture.opened {
+		return errSocClosed
+	}
+	var capt unsafe.Pointer
+	if capture != nil {
+		capt = capture.soc
+	}
+	_, err := C.zmq_proxy(frontend.soc, backend.soc, capt)
+	return errget(err)
+}
