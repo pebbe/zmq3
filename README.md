@@ -12,5 +12,4 @@ A Go interface to [ZeroMQ](http://www.zeromq.org/) version 3.
 
  * `zmq_socket_monitor()`
  * `ZMQ_TCP_ACCEPT_FILTER`
- * `ZMQ_FD` on Windows
  * Re-implementing the remaining examples for [ØMQ - The Guide](http://zguide.zeromq.org/page:all).
