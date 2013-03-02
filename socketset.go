@@ -13,9 +13,6 @@ import (
 )
 
 func (soc *Socket) setString(opt C.int, s string) error {
-	if !soc.opened {
-		return errSocClosed
-	}
 	cs := C.CString(s)
 	defer C.free(unsafe.Pointer(cs))
 	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(cs), C.size_t(len(s))); i != 0 {
@@ -25,9 +22,6 @@ func (soc *Socket) setString(opt C.int, s string) error {
 }
 
 func (soc *Socket) setInt(opt C.int, value int) error {
-	if !soc.opened {
-		return errSocClosed
-	}
 	val := C.int(value)
 	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); i != 0 {
 		return errget(err)
@@ -36,9 +30,6 @@ func (soc *Socket) setInt(opt C.int, value int) error {
 }
 
 func (soc *Socket) setInt64(opt C.int, value int64) error {
-	if !soc.opened {
-		return errSocClosed
-	}
 	val := C.int64_t(value)
 	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); i != 0 {
 		return errget(err)
@@ -47,9 +38,6 @@ func (soc *Socket) setInt64(opt C.int, value int64) error {
 }
 
 func (soc *Socket) setUInt64(opt C.int, value uint64) error {
-	if !soc.opened {
-		return errSocClosed
-	}
 	val := C.uint64_t(value)
 	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); i != 0 {
 		return errget(err)

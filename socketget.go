@@ -12,9 +12,6 @@ import (
 )
 
 func (soc *Socket) getString(opt C.int, bufsize int) (string, error) {
-	if !soc.opened {
-		return "", errSocClosed
-	}
 	value := make([]byte, bufsize)
 	size := C.size_t(bufsize)
 	if i, err := C.zmq_getsockopt(soc.soc, opt, unsafe.Pointer(&value[0]), &size); i != 0 {
@@ -24,9 +21,6 @@ func (soc *Socket) getString(opt C.int, bufsize int) (string, error) {
 }
 
 func (soc *Socket) getInt(opt C.int) (int, error) {
-	if !soc.opened {
-		return 0, errSocClosed
-	}
 	value := C.int(0)
 	size := C.size_t(unsafe.Sizeof(value))
 	if i, err := C.zmq_getsockopt(soc.soc, opt, unsafe.Pointer(&value), &size); i != 0 {
@@ -36,9 +30,6 @@ func (soc *Socket) getInt(opt C.int) (int, error) {
 }
 
 func (soc *Socket) getInt64(opt C.int) (int64, error) {
-	if !soc.opened {
-		return 0, errSocClosed
-	}
 	value := C.int64_t(0)
 	size := C.size_t(unsafe.Sizeof(value))
 	if i, err := C.zmq_getsockopt(soc.soc, opt, unsafe.Pointer(&value), &size); i != 0 {
@@ -48,9 +39,6 @@ func (soc *Socket) getInt64(opt C.int) (int64, error) {
 }
 
 func (soc *Socket) getUInt64(opt C.int) (uint64, error) {
-	if !soc.opened {
-		return 0, errSocClosed
-	}
 	value := C.uint64_t(0)
 	size := C.size_t(unsafe.Sizeof(value))
 	if i, err := C.zmq_getsockopt(soc.soc, opt, unsafe.Pointer(&value), &size); i != 0 {
