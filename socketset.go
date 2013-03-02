@@ -261,25 +261,9 @@ func (soc *Socket) SetTcpKeepaliveIntvl(value int) error {
 	return soc.setInt(C.ZMQ_TCP_KEEPALIVE_INTVL, value)
 }
 
-/* TO DO:
-
 // ZMQ_TCP_ACCEPT_FILTER: Assign filters to allow new TCP connections
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc29
-
-       Assign arbitrary number of filters that will be applied for each new TCP transport connection on a
-       listening socket. If no filters applied, then TCP transport allows connections from any ip. If at
-       least one filter is applied then new connection source ip should be matched. To clear all filters
-       call zmq_setsockopt(socket, ZMQ_TCP_ACCEPT_FILTER, NULL, 0). Filter is a null-terminated string with
-       ipv6 or ipv4 CIDR.
-
-
-       Option value type         binary data
-
-       Option value unit         N/A
-
-       Default value             no filters (allow from all)
-
-       Applicable socket types   all listening sockets, when using
-                                 TCP transports.
-*/
+func (soc *Socket) SetTcpAcceptFilter(filter string) error {
+	return soc.setString(C.ZMQ_TCP_ACCEPT_FILTER, filter)
+}
