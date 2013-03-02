@@ -10,5 +10,4 @@ A Go interface to [ZeroMQ](http://www.zeromq.org/) version 3.
 
 ## To do
 
- * `zmq_socket_monitor()`
  * Re-implementing the remaining examples for [ØMQ - The Guide](http://zguide.zeromq.org/page:all).

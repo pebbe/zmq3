@@ -223,9 +223,9 @@ func (soc *Socket) GetDelayAttachOnConnect() (bool, error) {
 // ZMQ_EVENTS: Retrieve socket event state
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc24
-func (soc *Socket) GetEvents() (EventState, error) {
+func (soc *Socket) GetEvents() (State, error) {
 	v, err :=  soc.getInt(C.ZMQ_EVENTS)
-	return EventState(v), err
+	return State(v), err
 }
 
 // ZMQ_LAST_ENDPOINT: Retrieve the last endpoint set
