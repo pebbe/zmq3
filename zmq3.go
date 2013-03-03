@@ -317,6 +317,7 @@ getting socket options.
 */
 type Socket struct {
 	soc unsafe.Pointer
+	ctx *Context // this prevents context from being garbage collected before socket
 }
 
 /*
@@ -339,6 +340,7 @@ func (ctx *Context) NewSocket(t Type) (soc *Socket, err error) {
 		err = errget(e)
 	} else {
 		soc.soc = s
+		soc.ctx = ctx
 		runtime.SetFinalizer(soc, (*Socket).Close)
 	}
 	return
