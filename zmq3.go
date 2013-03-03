@@ -94,8 +94,12 @@ func (ctx *Context) Close() error {
 }
 
 func (ctx *Context) getOption(o C.int) (int, error) {
-	n, err := C.zmq_ctx_get(ctx.ctx, o)
-	return int(n), errget(err)
+	nc, err := C.zmq_ctx_get(ctx.ctx, o)
+	n := int(nc)
+	if n < 0 {
+		return n, errget(err)
+	}
+	return n, nil
 }
 
 // Returns the size of the 0MQ thread pool for this context.
