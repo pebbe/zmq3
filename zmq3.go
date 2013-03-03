@@ -28,6 +28,7 @@ import "C"
 
 import (
 	"errors"
+	"fmt"
 	"runtime"
 	"strings"
 	"syscall"
@@ -60,6 +61,13 @@ func Error(e int) string {
 
 type Context struct {
 	ctx unsafe.Pointer
+}
+
+// Context as string.
+func (c Context) String() string {
+	it, _ := c.GetIoThreads()
+	ms, _ := c.GetMaxSockets()
+	return fmt.Sprintf("Context(IO_THREADS=%d,MAX_SOCKETS=%d)", it, ms)
 }
 
 // Create new 0MQ context.
@@ -150,6 +158,37 @@ const (
 	PAIR   = Type(C.ZMQ_PAIR)
 )
 
+/*
+Socket type as string.
+*/
+func (t Type) String() string {
+	switch t {
+	case REQ:
+		return "REQ"
+	case REP:
+		return "REP"
+	case DEALER:
+		return "DEALER"
+	case ROUTER:
+		return "ROUTER"
+	case PUB:
+		return "PUB"
+	case SUB:
+		return "SUB"
+	case XPUB:
+		return "XPUB"
+	case XSUB:
+		return "XSUB"
+	case PUSH:
+		return "PUSH"
+	case PULL:
+		return "PULL"
+	case PAIR:
+		return "PAIR"
+	}
+	return "INVALID"
+}
+
 // Used by  (*Socket)Send() and (*Socket)Recv()
 type Flag int
 
@@ -161,7 +200,21 @@ const (
 	SNDMORE  = Flag(C.ZMQ_SNDMORE)
 )
 
-// Used by for (*Socket)Monitor() and (*Socket)RecvEvent()
+/*
+Socket flag as string.
+*/
+func (f Flag) String() string {
+	ff := make([]string, 0)
+	if f&DONTWAIT != 0 {
+		ff = append(ff, "DONTWAIT")
+	}
+	if f&SNDMORE != 0 {
+		ff = append(ff, "SNDMORE")
+	}
+	return strings.Join(ff, "|")
+}
+
+// Used by (*Socket)Monitor() and (*Socket)RecvEvent()
 type Event int
 
 const (
@@ -180,6 +233,47 @@ const (
 	EVENT_DISCONNECTED    = Event(C.ZMQ_EVENT_DISCONNECTED)
 )
 
+/*
+Socket event as string.
+*/
+func (e Event) String() string {
+	if e == EVENT_ALL {
+		return "EVENT_ALL"
+	}
+	ee := make([]string, 0)
+	if e&EVENT_CONNECTED != 0 {
+		ee = append(ee, "EVENT_CONNECTED")
+	}
+	if e&EVENT_CONNECT_DELAYED != 0 {
+		ee = append(ee, "EVENT_CONNECT_DELAYED")
+	}
+	if e&EVENT_CONNECT_RETRIED != 0 {
+		ee = append(ee, "EVENT_CONNECT_RETRIED")
+	}
+	if e&EVENT_LISTENING != 0 {
+		ee = append(ee, "EVENT_LISTENING")
+	}
+	if e&EVENT_BIND_FAILED != 0 {
+		ee = append(ee, "EVENT_BIND_FAILED")
+	}
+	if e&EVENT_ACCEPTED != 0 {
+		ee = append(ee, "EVENT_ACCEPTED")
+	}
+	if e&EVENT_ACCEPT_FAILED != 0 {
+		ee = append(ee, "EVENT_ACCEPT_FAILED")
+	}
+	if e&EVENT_CLOSED != 0 {
+		ee = append(ee, "EVENT_CLOSED")
+	}
+	if e&EVENT_CLOSE_FAILED != 0 {
+		ee = append(ee, "EVENT_CLOSE_FAILED")
+	}
+	if e&EVENT_DISCONNECTED != 0 {
+		ee = append(ee, "EVENT_DISCONNECTED")
+	}
+	return strings.Join(ee, "|")
+}
+
 // Used by (soc *Socket)GetEvents()
 type State int
 
@@ -191,11 +285,33 @@ const (
 )
 
 /*
+Socket state as string.
+*/
+func (s State) String() string {
+	ss := make([]string, 0)
+	if s&POLLIN != 0 {
+		ss = append(ss, "POLLIN")
+	}
+	if s&POLLOUT != 0 {
+		ss = append(ss, "POLLOUT")
+	}
+	return strings.Join(ss, "|")
+}
+
+/*
 Socket functions starting with `Set` or `Get` are used for setting and
 getting socket options.
 */
 type Socket struct {
 	soc unsafe.Pointer
+}
+
+/*
+Socket as string.
+*/
+func (soc Socket) String() string {
+	t, _ := soc.GetType()
+	return "Socket(" + t.String() + ")"
 }
 
 /*
@@ -456,47 +572,6 @@ func (soc *Socket) RecvEvent(flags Flag) (event_type Event, addr string, value i
 	value = int(val)
 
 	return
-}
-
-/*
-Return Event as string
-*/
-func (e Event) String() string {
-
-	ee := make([]string, 0)
-
-	if e&EVENT_CONNECTED != 0 {
-		ee = append(ee, "EVENT_CONNECTED")
-	}
-	if e&EVENT_CONNECT_DELAYED != 0 {
-		ee = append(ee, "EVENT_CONNECT_DELAYED")
-	}
-	if e&EVENT_CONNECT_RETRIED != 0 {
-		ee = append(ee, "EVENT_CONNECT_RETRIED")
-	}
-	if e&EVENT_LISTENING != 0 {
-		ee = append(ee, "EVENT_LISTENING")
-	}
-	if e&EVENT_BIND_FAILED != 0 {
-		ee = append(ee, "EVENT_BIND_FAILED")
-	}
-	if e&EVENT_ACCEPTED != 0 {
-		ee = append(ee, "EVENT_ACCEPTED")
-	}
-	if e&EVENT_ACCEPT_FAILED != 0 {
-		ee = append(ee, "EVENT_ACCEPT_FAILED")
-	}
-	if e&EVENT_CLOSED != 0 {
-		ee = append(ee, "EVENT_CLOSED")
-	}
-	if e&EVENT_CLOSE_FAILED != 0 {
-		ee = append(ee, "EVENT_CLOSE_FAILED")
-	}
-	if e&EVENT_DISCONNECTED != 0 {
-		ee = append(ee, "EVENT_DISCONNECTED")
-	}
-
-	return strings.Join(ee, "|")
 }
 
 /*
