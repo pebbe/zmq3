@@ -190,7 +190,7 @@ func (t Type) String() string {
 	case PAIR:
 		return "PAIR"
 	}
-	return "INVALID"
+	return "<INVALID>"
 }
 
 // Used by  (*Socket)Send() and (*Socket)Recv()
@@ -214,6 +214,9 @@ func (f Flag) String() string {
 	}
 	if f&SNDMORE != 0 {
 		ff = append(ff, "SNDMORE")
+	}
+	if len(ff) == 0 {
+		return "<NONE>"
 	}
 	return strings.Join(ff, "|")
 }
@@ -275,6 +278,9 @@ func (e Event) String() string {
 	if e&EVENT_DISCONNECTED != 0 {
 		ee = append(ee, "EVENT_DISCONNECTED")
 	}
+	if len(ee) == 0 {
+		return "<NONE>"
+	}
 	return strings.Join(ee, "|")
 }
 
@@ -298,6 +304,9 @@ func (s State) String() string {
 	}
 	if s&POLLOUT != 0 {
 		ss = append(ss, "POLLOUT")
+	}
+	if len(ss) == 0 {
+		return "<NONE>"
 	}
 	return strings.Join(ss, "|")
 }
