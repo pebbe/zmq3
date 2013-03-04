@@ -8,6 +8,8 @@ mtserver/mtserver
 rrbroker/rrbroker
 rrclient/rrclient
 rrworker/rrworker
+syncpub/syncpub
+syncsub/syncsub
 tasksink/tasksink
 tasksink2/tasksink2
 taskvent/taskvent
