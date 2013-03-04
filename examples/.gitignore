@@ -7,7 +7,10 @@ rrbroker/rrbroker
 rrclient/rrclient
 rrworker/rrworker
 tasksink/tasksink
+tasksink2/tasksink2
 taskvent/taskvent
 taskwork/taskwork
+taskwork2/taskwork2
 wuclient/wuclient
+wuproxy/wuproxy
 wuserver/wuserver
