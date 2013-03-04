@@ -13,12 +13,10 @@ type Msg struct {
 }
 
 func main() {
-	//  Prepare our context and sockets
-	context, _ := zmq.NewContext()
-	defer context.Close()
-	frontend, _ := context.NewSocket(zmq.ROUTER)
+	//  Prepare our sockets
+	frontend, _ := zmq.NewSocket(zmq.ROUTER)
 	defer frontend.Close()
-	backend, _ := context.NewSocket(zmq.DEALER)
+	backend, _ := zmq.NewSocket(zmq.DEALER)
 	defer backend.Close()
 	frontend.Bind("tcp://*:5559")
 	backend.Bind("tcp://*:5560")

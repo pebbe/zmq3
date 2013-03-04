@@ -11,10 +11,7 @@ import (
 )
 
 func main() {
-	context, _ := zmq.NewContext()
-	defer context.Close()
-
-	requester, _ := context.NewSocket(zmq.REQ)
+	requester, _ := zmq.NewSocket(zmq.REQ)
 	defer requester.Close()
 	requester.Connect("tcp://localhost:5559")
 

@@ -15,16 +15,13 @@ import (
 )
 
 func main() {
-	context, _ := zmq.NewContext()
-	defer context.Close()
-
 	//  Socket to receive messages on
-	receiver, _ := context.NewSocket(zmq.PULL)
+	receiver, _ := zmq.NewSocket(zmq.PULL)
 	defer receiver.Close()
 	receiver.Connect("tcp://localhost:5557")
 
 	//  Socket to send messages to
-	sender, _ := context.NewSocket(zmq.PUSH)
+	sender, _ := zmq.NewSocket(zmq.PUSH)
 	defer sender.Close()
 	sender.Connect("tcp://localhost:5558")
 
@@ -33,7 +30,7 @@ func main() {
 		s, _ := receiver.Recv(0)
 
 		//  Simple progress indicator for the viewer
-        fmt.Print(s + ".");
+		fmt.Print(s + ".")
 
 		//  Do the work
 		msec, _ := strconv.Atoi(s)

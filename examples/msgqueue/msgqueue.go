@@ -12,26 +12,23 @@ import (
 func main() {
 	var err error
 
-	context, _ := zmq.NewContext()
-	defer context.Close()
-
 	//  Socket facing clients
-	frontend, _ := context.NewSocket(zmq.ROUTER)
+	frontend, _ := zmq.NewSocket(zmq.ROUTER)
 	defer frontend.Close()
 	err = frontend.Bind("tcp://*:5559")
 	if err != nil {
 		log.Fatalln("Binding frontend:", err)
 	}
 
-    //  Socket facing services
-	backend, _ := context.NewSocket(zmq.DEALER)
+	//  Socket facing services
+	backend, _ := zmq.NewSocket(zmq.DEALER)
 	defer backend.Close()
 	err = backend.Bind("tcp://*:5560")
 	if err != nil {
 		log.Fatalln("Binding backend:", err)
 	}
 
-    //  Start the proxy
-    err = zmq.Proxy(frontend, backend, nil)
+	//  Start the proxy
+	err = zmq.Proxy(frontend, backend, nil)
 	log.Fatalln("Proxy interrupted:", err)
 }

@@ -13,16 +13,13 @@ import (
 )
 
 func main() {
-	context, _ := zmq.NewContext()
-	defer context.Close()
-
 	//  Socket to send messages on
-	sender, _ := context.NewSocket(zmq.PUSH)
+	sender, _ := zmq.NewSocket(zmq.PUSH)
 	defer sender.Close()
 	sender.Bind("tcp://*:5557")
 
 	//  Socket to send start of batch message on
-	sink, _ := context.NewSocket(zmq.PUSH)
+	sink, _ := zmq.NewSocket(zmq.PUSH)
 	defer sink.Close()
 	sink.Connect("tcp://localhost:5558")
 

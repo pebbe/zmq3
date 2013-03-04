@@ -12,17 +12,13 @@ import (
 
 func main() {
 
-	//  Prepare our context and sockets
-	context, _ := zmq.NewContext()
-	defer context.Close()
-
 	//  Connect to task ventilator
-	receiver, _ := context.NewSocket(zmq.PULL)
+	receiver, _ := zmq.NewSocket(zmq.PULL)
 	defer receiver.Close()
 	receiver.Connect("tcp://localhost:5557")
 
 	//  Connect to weather server
-	subscriber, _ := context.NewSocket(zmq.SUB)
+	subscriber, _ := zmq.NewSocket(zmq.SUB)
 	defer subscriber.Close()
 	subscriber.Connect("tcp://localhost:5556")
 	subscriber.SetSubscribe("10001 ")

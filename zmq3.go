@@ -28,12 +28,23 @@ import "C"
 
 import (
 	"errors"
-	"fmt"
 	"runtime"
 	"strings"
 	"syscall"
 	"unsafe"
 )
+
+var (
+	ctx unsafe.Pointer
+)
+
+func init() {
+	var err error
+	ctx, err = C.zmq_ctx_new()
+	if ctx == nil {
+		panic("Init of ZeroMQ context failed: " + errget(err).Error())
+	}
+}
 
 //. Util
 
@@ -59,42 +70,8 @@ func Error(e int) string {
 
 //. Context
 
-type Context struct {
-	ctx unsafe.Pointer
-}
-
-// Context as string.
-func (c Context) String() string {
-	it, _ := c.GetIoThreads()
-	ms, _ := c.GetMaxSockets()
-	return fmt.Sprintf("Context(IO_THREADS=%d,MAX_SOCKETS=%d)", it, ms)
-}
-
-// Create new 0MQ context.
-func NewContext() (ctx *Context, err error) {
-	ctx = &Context{}
-	c, e := C.zmq_ctx_new()
-	if c == nil {
-		err = errget(e)
-	} else {
-		ctx.ctx = c
-		runtime.SetFinalizer(ctx, (*Context).Close)
-	}
-	return
-}
-
-// If not called explicitly, the context will be closed on garbage collection
-func (ctx *Context) Close() error {
-	i, err := C.zmq_ctx_destroy(ctx.ctx)
-	if int(i) != 0 {
-		return errget(err)
-	}
-	ctx.ctx = unsafe.Pointer(nil)
-	return nil
-}
-
-func (ctx *Context) getOption(o C.int) (int, error) {
-	nc, err := C.zmq_ctx_get(ctx.ctx, o)
+func getOption(o C.int) (int, error) {
+	nc, err := C.zmq_ctx_get(ctx, o)
 	n := int(nc)
 	if n < 0 {
 		return n, errget(err)
@@ -102,18 +79,18 @@ func (ctx *Context) getOption(o C.int) (int, error) {
 	return n, nil
 }
 
-// Returns the size of the 0MQ thread pool for this context.
-func (ctx *Context) GetIoThreads() (int, error) {
-	return ctx.getOption(C.ZMQ_IO_THREADS)
+// Returns the size of the 0MQ thread pool.
+func GetIoThreads() (int, error) {
+	return getOption(C.ZMQ_IO_THREADS)
 }
 
-// Returns the maximum number of sockets allowed for this context.
-func (ctx *Context) GetMaxSockets() (int, error) {
-	return ctx.getOption(C.ZMQ_MAX_SOCKETS)
+// Returns the maximum number of sockets allowed.
+func GetMaxSockets() (int, error) {
+	return getOption(C.ZMQ_MAX_SOCKETS)
 }
 
-func (ctx *Context) setOption(o C.int, n int) error {
-	i, err := C.zmq_ctx_set(ctx.ctx, o, C.int(n))
+func setOption(o C.int, n int) error {
+	i, err := C.zmq_ctx_set(ctx, o, C.int(n))
 	if int(i) != 0 {
 		return errget(err)
 	}
@@ -122,32 +99,32 @@ func (ctx *Context) setOption(o C.int, n int) error {
 
 /*
 Specifies the size of the 0MQ thread pool to handle I/O operations. If
-your application is using only the inproc transport for messaging you may set this to zero,
-otherwise set it to at least one. This option only applies before creating any sockets on the
-context.
+your application is using only the inproc transport for messaging you
+may set this to zero, otherwise set it to at least one. This option only
+applies before creating any sockets.
 
 Default value   1
 */
-func (ctx *Context) SetIoThreads(n int) error {
-	return ctx.setOption(C.ZMQ_IO_THREADS, n)
+func SetIoThreads(n int) error {
+	return setOption(C.ZMQ_IO_THREADS, n)
 }
 
 /*
-Sets the maximum number of sockets allowed on the context.
+Sets the maximum number of sockets allowed.
 
 Default value   1024
 */
-func (ctx *Context) SetMaxSockets(n int) error {
-	return ctx.setOption(C.ZMQ_MAX_SOCKETS, n)
+func SetMaxSockets(n int) error {
+	return setOption(C.ZMQ_MAX_SOCKETS, n)
 }
 
 //. Sockets
 
-// Specifies the type of a socket, used by (*Context)NewSocket()
+// Specifies the type of a socket, used by NewSocket()
 type Type int
 
 const (
-	// Constants for (*Context)NewSocket()
+	// Constants for NewSocket()
 	// See: http://api.zeromq.org/3-2:zmq-socket#toc3
 	REQ    = Type(C.ZMQ_REQ)
 	REP    = Type(C.ZMQ_REP)
@@ -317,7 +294,6 @@ getting socket options.
 */
 type Socket struct {
 	soc unsafe.Pointer
-	ctx *Context // this prevents context from being garbage collected before socket
 }
 
 /*
@@ -333,14 +309,13 @@ Create 0MQ socket.
 
 For a description of socket types, see: http://api.zeromq.org/3-2:zmq-socket#toc3
 */
-func (ctx *Context) NewSocket(t Type) (soc *Socket, err error) {
+func NewSocket(t Type) (soc *Socket, err error) {
 	soc = &Socket{}
-	s, e := C.zmq_socket(ctx.ctx, C.int(t))
+	s, e := C.zmq_socket(ctx, C.int(t))
 	if s == nil {
 		err = errget(e)
 	} else {
 		soc.soc = s
-		soc.ctx = ctx
 		runtime.SetFinalizer(soc, (*Socket).Close)
 	}
 	return
@@ -486,8 +461,8 @@ Example:
         "time"
     )
 
-    func rep_socket_monitor(ctx *zmq.Context, addr string) {
-        s, err := ctx.NewSocket(zmq.PAIR)
+    func rep_socket_monitor(addr string) {
+        s, err := zmq.NewSocket(zmq.PAIR)
         if err != nil {
             log.Fatalln(err)
         }
@@ -507,16 +482,8 @@ Example:
 
     func main() {
 
-        ctx, err := zmq.NewContext()
-        if err != nil {
-            log.Fatalln(err)
-        }
-
-        // this would hang because the socket created by Monitor() remains open
-        //defer ctx.Close()
-
         // REP socket
-        rep, err := ctx.NewSocket(zmq.REP)
+        rep, err := zmq.NewSocket(zmq.REP)
         if err != nil {
             log.Fatalln(err)
         }
@@ -527,7 +494,7 @@ Example:
         if err != nil {
             log.Fatalln(err)
         }
-        go rep_socket_monitor(ctx, "inproc://monitor.rep")
+        go rep_socket_monitor("inproc://monitor.rep")
 
         // Generate an event
         rep.Bind("tcp://*:5555")

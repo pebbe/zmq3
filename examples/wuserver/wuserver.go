@@ -14,10 +14,8 @@ import (
 
 func main() {
 
-	//  Prepare our context and publisher
-	context, _ := zmq.NewContext()
-	defer context.Close()
-	publisher, _ := context.NewSocket(zmq.PUB)
+	//  Prepare our publisher
+	publisher, _ := zmq.NewSocket(zmq.PUB)
 	defer publisher.Close()
 	publisher.Bind("tcp://*:5556")
 	publisher.Bind("ipc://weather.ipc")
