@@ -10,6 +10,11 @@ import (
 	"regexp"
 )
 
+var (
+	all_char = regexp.MustCompile("^[^[:cntrl:]]*$")
+)
+
+
 func main() {
 	sink, _ := zmq.NewSocket(zmq.ROUTER)
 	defer sink.Close()
@@ -32,8 +37,6 @@ func main() {
 }
 
 func dump(soc *zmq.Socket) {
-	all_char := regexp.MustCompile("^[^[:cntrl:]]*$")
-
 	fmt.Println("----------------------------------------")
 	for {
 		//  Process all parts of the message
