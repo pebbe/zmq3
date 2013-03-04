@@ -34,5 +34,5 @@ func main() {
 	}
 
 	//  Calculate and report duration of batch
-	fmt.Println("\nTotal elapsed time: " + time.Since(start_time).String())
+	fmt.Println("\nTotal elapsed time: ", time.Since(start_time))
 }
