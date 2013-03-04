@@ -3,6 +3,7 @@ hwserver/hwserver
 msgqueue/msgqueue
 mspoller/mspoller
 msreader/msreader
+mtserver/mtserver
 rrbroker/rrbroker
 rrclient/rrclient
 rrworker/rrworker
