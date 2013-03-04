@@ -25,14 +25,20 @@ func main() {
 	chBack := make(chan *Msg)
 	go func() {
 		for {
-			msg, _ := frontend.Recv(0)
+			msg, e := frontend.Recv(0)
+			if e != nil {
+				break
+			}
 			more, _ := frontend.GetRcvmore()
 			chFront <- &Msg{msg, more}
 		}
 	}()
 	go func() {
 		for {
-			msg, _ := backend.Recv(0)
+			msg, e := backend.Recv(0)
+			if e != nil {
+				break
+			}
 			more, _ := backend.GetRcvmore()
 			chBack <- &Msg{msg, more}
 		}

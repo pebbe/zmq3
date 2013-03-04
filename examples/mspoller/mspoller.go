@@ -27,13 +27,19 @@ func main() {
 	chWup := make(chan string)
 	go func() {
 		for {
-			msg, _ := receiver.Recv(0)
+			msg, e := receiver.Recv(0)
+			if e != nil {
+				break
+			}
 			chTask <- msg
 		}
 	}()
 	go func() {
 		for {
-			msg, _ := subscriber.Recv(0)
+			msg, e := subscriber.Recv(0)
+			if e != nil {
+				break
+			}
 			chWup <- msg
 		}
 	}()
