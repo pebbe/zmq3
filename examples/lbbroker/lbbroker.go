@@ -54,7 +54,7 @@ func worker_task() {
 		identity, _ := worker.Recv(0)
 		empty, _ := worker.Recv(0)
 		if empty != "" {
-			panic(fmt.Sprintf("[%q] empty is not \"\": %q", identity, empty))
+			panic(fmt.Sprintf("empty is not \"\": %q", empty))
 		}
 
 		//  Get request, send reply
@@ -74,7 +74,7 @@ func worker_task() {
 //  just a queue of next available workers.
 
 func main() {
-	//  Prepare our context and sockets
+	//  Prepare our sockets
 	frontend, _ := zmq.NewSocket(zmq.ROUTER)
 	backend, _ := zmq.NewSocket(zmq.ROUTER)
 	defer frontend.Close()
@@ -113,78 +113,65 @@ func main() {
 		}
 	}
 	chBack := make(chan string, 100)
-	chFront := make(chan string, 100)
+	chFrontIf := make(chan string, 100)
 	go pool(backend, chBack)
-	go pool(frontend, chFront)
+	go pool(frontend, chFrontIf)
 
-	// Two local functions that do all the middle processing
-
-	//  Handle worker activity on backend
-	backhandle := func(msg string) {
-		//  Queue worker identity for load-balancing
-		worker_id := msg
-		if !(len(worker_queue) < NBR_WORKERS) {
-			panic("!(len(worker_queue) < NBR_WORKERS)")
+	chNil := make(chan string) // a channel that is never used
+	for client_nbr > 0 {
+		chFront := chNil
+		//  Poll frontend only if we have available workers
+		if len(worker_queue) > 0 {
+			chFront = chFrontIf
 		}
-		worker_queue = append(worker_queue, worker_id)
+		select {
+		case msg := <-chBack: //  Handle worker activity on backend
+			//  Queue worker identity for load-balancing
+			worker_id := msg
+			if !(len(worker_queue) < NBR_WORKERS) {
+				panic("!(len(worker_queue) < NBR_WORKERS)")
+			}
+			worker_queue = append(worker_queue, worker_id)
 
-		//  Second frame is empty
-		empty := <-chBack
-		if empty != "" {
-			panic(fmt.Sprintf("empty is not \"\": %q", empty))
-		}
-
-		//  Third frame is READY or else a client reply identity
-		client_id := <-chBack
-
-		//  If client reply, send rest back to frontend
-		if client_id != "READY" {
+			//  Second frame is empty
 			empty := <-chBack
 			if empty != "" {
 				panic(fmt.Sprintf("empty is not \"\": %q", empty))
 			}
-			reply := <-chBack
-			frontend.Send(client_id, zmq.SNDMORE)
-			frontend.Send("", zmq.SNDMORE)
-			frontend.Send(reply, 0)
-			client_nbr--
-		}
-	}
 
-	//  Here is how we handle a client request:
-	fronthandle := func(msg string) {
-		//  Now get next client request, route to last-used worker
-		//  Client request is [identity][empty][request]
-		client_id := msg
-		empty := <-chFront
-		if empty != "" {
-			panic(fmt.Sprintf("empty is not \"\": %q", empty))
-		}
-		request := <-chFront
+			//  Third frame is READY or else a client reply identity
+			client_id := <-chBack
 
-		backend.Send(worker_queue[0], zmq.SNDMORE)
-		backend.Send("", zmq.SNDMORE)
-		backend.Send(client_id, zmq.SNDMORE)
-		backend.Send("", zmq.SNDMORE)
-		backend.Send(request, 0)
-
-		//  Dequeue and drop the next worker identity
-		worker_queue = worker_queue[1:]
-
-	}
-
-	// This is the actual main loop
-	for client_nbr > 0 {
-		//  Poll frontend only if we have available workers
-		if len(worker_queue) > 0 {
-			select {
-			case msg := <-chBack:
-				backhandle(msg)
-			case msg := <-chFront:
-				fronthandle(msg)
+			//  If client reply, send rest back to frontend
+			if client_id != "READY" {
+				empty := <-chBack
+				if empty != "" {
+					panic(fmt.Sprintf("empty is not \"\": %q", empty))
+				}
+				reply := <-chBack
+				frontend.Send(client_id, zmq.SNDMORE)
+				frontend.Send("", zmq.SNDMORE)
+				frontend.Send(reply, 0)
+				client_nbr--
 			}
-		} else {
-			backhandle(<-chBack)
+		case msg := <-chFront: //  Here is how we handle a client request:
+			//  Now get next client request, route to last-used worker
+			//  Client request is [identity][empty][request]
+			client_id := msg
+			empty := <-chFront
+			if empty != "" {
+				panic(fmt.Sprintf("empty is not \"\": %q", empty))
+			}
+			request := <-chFront
+
+			backend.Send(worker_queue[0], zmq.SNDMORE)
+			backend.Send("", zmq.SNDMORE)
+			backend.Send(client_id, zmq.SNDMORE)
+			backend.Send("", zmq.SNDMORE)
+			backend.Send(request, 0)
+
+			//  Dequeue and drop the next worker identity
+			worker_queue = worker_queue[1:]
 		}
 	}
 
