@@ -5,15 +5,15 @@
 package main
 
 import (
-	"fmt"
 	zmq "github.com/pebbe/zmq3"
+
+	"fmt"
 	"regexp"
 )
 
 var (
 	all_char = regexp.MustCompile("^[^[:cntrl:]]*$")
 )
-
 
 func main() {
 	sink, _ := zmq.NewSocket(zmq.ROUTER)

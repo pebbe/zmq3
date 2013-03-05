@@ -5,8 +5,9 @@
 package main
 
 import (
-	"fmt"
 	zmq "github.com/pebbe/zmq3"
+
+	"fmt"
 	"time"
 )
 
@@ -36,7 +37,7 @@ func main() {
 			fmt.Print(".")
 		}
 	}
-	fmt.Println("\nTotal elapsed time: ", time.Since(start_time))
+	fmt.Println("\nTotal elapsed time:", time.Since(start_time))
 
 	//  Send kill signal to workers
 	controller.Send("KILL", 0)

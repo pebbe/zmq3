@@ -6,8 +6,9 @@
 package main
 
 import (
-	"fmt"
 	zmq "github.com/pebbe/zmq3"
+
+	"fmt"
 	"time"
 )
 
@@ -26,7 +27,7 @@ func main() {
 	//  Process 100 confirmations
 	for task_nbr := 0; task_nbr < 100; task_nbr++ {
 		receiver.Recv(0)
-		if task_nbr % 10 == 0 {
+		if task_nbr%10 == 0 {
 			fmt.Print(":")
 		} else {
 			fmt.Print(".")
@@ -34,5 +35,5 @@ func main() {
 	}
 
 	//  Calculate and report duration of batch
-	fmt.Println("\nTotal elapsed time: ", time.Since(start_time))
+	fmt.Println("\nTotal elapsed time:", time.Since(start_time))
 }

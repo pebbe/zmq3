@@ -4,8 +4,9 @@
 package main
 
 import (
-	"fmt"
 	zmq "github.com/pebbe/zmq3"
+
+	"fmt"
 )
 
 func main() {

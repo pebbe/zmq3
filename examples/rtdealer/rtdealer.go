@@ -1,5 +1,5 @@
 //
-//  ROUTER-to-REQ example.
+//  ROUTER-to-DEALER example.
 //
 package main
 

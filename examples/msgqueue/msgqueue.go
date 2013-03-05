@@ -6,6 +6,7 @@ package main
 
 import (
 	zmq "github.com/pebbe/zmq3"
+
 	"log"
 )
 

@@ -6,8 +6,9 @@
 package main
 
 import (
-	"fmt"
 	zmq "github.com/pebbe/zmq3"
+
+	"fmt"
 	"math/rand"
 	"time"
 )
@@ -43,7 +44,7 @@ func main() {
 		s := fmt.Sprintf("%d", workload)
 		sender.Send(s, 0)
 	}
-	fmt.Println("Total expected cost: " +  (time.Duration(total_msec) * time.Millisecond).String())
+	fmt.Println("Total expected cost:", time.Duration(total_msec) * time.Millisecond)
 	time.Sleep(time.Second) //  Give 0MQ time to deliver
 
 }
