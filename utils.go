@@ -12,9 +12,12 @@ Any `[]string' or `[][]byte' is split into separate `string's or `[]byte's
 Any other part that isn't a `string' or `[]byte' is converted
 to `string' with `fmt.Sprintf("%v", part)'.
 
-Returns error code of sending the final part.
+Returns total bytes sent.
 */
-func (soc *Socket) SendMessage(parts ...interface{}) (err error) {
+func (soc *Socket) SendMessage(parts ...interface{}) (total int, err error) {
+	// TODO: make this faster
+
+	// flatten first, just in case the last part may be an empty []string or [][]byte
 	pp := make([]interface{}, 0)
 	for _, p := range parts {
 		switch t := p.(type) {
@@ -42,52 +45,79 @@ func (soc *Socket) SendMessage(parts ...interface{}) (err error) {
 		}
 		switch t := p.(type) {
 		case string:
-			_, err = soc.Send(t, opt)
+			j, e := soc.Send(t, opt)
+			if e == nil {
+				total += j
+			} else {
+				return -1, e
+			}
 		case []byte:
-			_, err = soc.SendBytes(t, opt)
+			j, e := soc.SendBytes(t, opt)
+			if e == nil {
+				total += j
+			} else {
+				return -1, e
+			}
 		default:
-			_, err = soc.Send(fmt.Sprintf("%v", t), opt)
+			j, e := soc.Send(fmt.Sprintf("%v", t), opt)
+			if e == nil {
+				total += j
+			} else {
+				return -1, e
+			}
 		}
 	}
-	return // error code of last call
+	return
 }
 
 /*
 Receive parts as message from socket.
 
-Returns error code of receiving the final part.
+Returns last non-nil error code.
 */
 func (soc *Socket) RecvMessage(flags Flag) (msg []string, err error) {
 	msg = make([]string, 0)
 	for {
-		s, err := soc.Recv(flags)
-		if err == nil {
+		s, e := soc.Recv(flags)
+		if e == nil {
 			msg = append(msg, s)
+		} else {
+			return msg[0:0], e
 		}
-		more, _ := soc.GetRcvmore()
-		if !more {
-			break
+		more, e := soc.GetRcvmore()
+		if e == nil {
+			if !more {
+				break
+			}
+		} else {
+			return msg[0:0], e
 		}
 	}
-	return // error code of last call
+	return
 }
 
 /*
 Receive parts as message from socket.
 
-Returns error code of receiving the final part.
+Returns last non-nil error code.
 */
 func (soc *Socket) RecvMessageBytes(flags Flag) (msg [][]byte, err error) {
 	msg = make([][]byte, 0)
 	for {
-		b, err := soc.RecvBytes(flags)
-		if err == nil {
+		b, e := soc.RecvBytes(flags)
+		if e == nil {
 			msg = append(msg, b)
+		} else {
+			return msg[0:0], e
 		}
-		more, _ := soc.GetRcvmore()
-		if !more {
-			break
+		more, e := soc.GetRcvmore()
+		if e == nil {
+			if !more {
+				break
+			}
+		} else {
+			return msg[0:0], e
 		}
 	}
-	return // error code of last call
+	return
 }
