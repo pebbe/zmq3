@@ -1,6 +1,8 @@
 //
 //  Weather proxy device.
 //
+//  NOT TESTED
+//
 package main
 
 import (
