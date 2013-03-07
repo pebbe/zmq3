@@ -1,7 +1,6 @@
 //
 //  Reading from multiple sockets.
-//  This version does NOT zmq_poll()
-//  It uses Go's select instead.
+//  This version uses zmq.Poll()
 //
 package main
 
@@ -24,34 +23,20 @@ func main() {
 	subscriber.Connect("tcp://localhost:5556")
 	subscriber.SetSubscribe("10001 ")
 
-	chTask := make(chan string)
-	chWup := make(chan string)
-	go func() {
-		for {
-			msg, e := receiver.Recv(0)
-			if e != nil {
-				break
-			}
-			chTask <- msg
-		}
-	}()
-	go func() {
-		for {
-			msg, e := subscriber.Recv(0)
-			if e != nil {
-				break
-			}
-			chWup <- msg
-		}
-	}()
-
+	//  Initialize poll set
+	poller := zmq.NewPoller()
+	poller.Register(receiver, zmq.POLLIN)
+	poller.Register(subscriber, zmq.POLLIN)
 	//  Process messages from both sockets
 	for {
-		select {
-		case task := <-chTask:
+		items, _ := poller.Poll(-1)
+		if items[0]&zmq.POLLIN != 0 {
+			task, _ := receiver.Recv(0)
 			//  Process task
 			fmt.Println("Got task:", task)
-		case update := <-chWup:
+		}
+		if items[1]&zmq.POLLIN != 0 {
+			update, _ := subscriber.Recv(0)
 			//  Process weather update
 			fmt.Println("Got weather update:", update)
 		}
