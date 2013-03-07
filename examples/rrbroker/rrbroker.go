@@ -7,11 +7,6 @@ import (
 	zmq "github.com/pebbe/zmq3"
 )
 
-type Msg struct {
-	s    string
-	more bool
-}
-
 func main() {
 	//  Prepare our sockets
 	frontend, _ := zmq.NewSocket(zmq.ROUTER)
@@ -21,49 +16,34 @@ func main() {
 	frontend.Bind("tcp://*:5559")
 	backend.Bind("tcp://*:5560")
 
-	chFront := make(chan *Msg)
-	chBack := make(chan *Msg)
-	go func() {
-		for {
-			msg, e := frontend.Recv(0)
-			if e != nil {
-				break
-			}
-			more, _ := frontend.GetRcvmore()
-			chFront <- &Msg{msg, more}
-		}
-	}()
-	go func() {
-		for {
-			msg, e := backend.Recv(0)
-			if e != nil {
-				break
-			}
-			more, _ := backend.GetRcvmore()
-			chBack <- &Msg{msg, more}
-		}
-	}()
+	//  Initialize poll set
+	items := zmq.NewPoller()
+	items.Register(frontend, zmq.POLLIN)
+	items.Register(backend, zmq.POLLIN)
+
+	//  Switch messages between sockets
 	for {
-		select {
-		case msg := <-chFront:
+		events, _ := items.Poll(-1)
+		if events[0]&zmq.POLLIN != 0 {
 			for {
-				if msg.more {
-					backend.Send(msg.s, zmq.SNDMORE)
+				msg, _ := frontend.Recv(0)
+				if more, _ := frontend.GetRcvmore(); more {
+					backend.Send(msg, zmq.SNDMORE)
 				} else {
-					backend.Send(msg.s, 0)
+					backend.Send(msg, 0)
 					break
 				}
-				msg = <-chFront
 			}
-		case msg := <-chBack:
+		}
+		if events[1]&zmq.POLLIN != 0 {
 			for {
-				if msg.more {
-					frontend.Send(msg.s, zmq.SNDMORE)
+				msg, _ := backend.Recv(0)
+				if more, _ := backend.GetRcvmore(); more {
+					frontend.Send(msg, zmq.SNDMORE)
 				} else {
-					frontend.Send(msg.s, 0)
+					frontend.Send(msg, 0)
 					break
 				}
-				msg = <-chBack
 			}
 		}
 	}
