@@ -43,25 +43,22 @@ func main() {
 	//  status messages back from peers. The zmq_poll timeout defines
 	//  our own heartbeat:
 
-	chStateFe := make(chan []string)
-	go func() {
-		for {
-			msg, e := statefe.RecvMessage(0)
-			if e != nil {
-				break
-			}
-			chStateFe <- msg
-		}
-	}()
+	items := zmq.NewPoller()
+	items.Register(statefe, zmq.POLLIN)
 	for {
 		//  Poll for activity, or 1 second timeout
-		select {
-		case msg := <-chStateFe:
-			//  Handle incoming status messages
+		events, err := items.Poll(time.Second)
+		if err != nil {
+			break
+		}
+
+		//  Handle incoming status messages
+		if events[0] & zmq.POLLIN != 0 {
+			msg, _ := statefe.RecvMessage(0)
 			peer_name := msg[0]
 			available := msg[1]
 			fmt.Printf("%s - %s workers free\n", peer_name, available)
-		case <-time.After(time.Second):
+		} else {
 			statebe.SendMessage(self, rand.Intn(10))
 		}
 	}
