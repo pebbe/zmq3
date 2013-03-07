@@ -103,66 +103,63 @@ func main() {
 	//  Queue of available workers
 	worker_queue := make([]string, 0, 10)
 
-	pool := func(soc *zmq.Socket, ch chan string) {
-		for {
-			msg, err := soc.Recv(0)
-			if err != nil {
-				panic(err)
-			}
-			ch <- msg
-		}
-	}
-	chBack := make(chan string, 100)
-	chFrontIf := make(chan string, 100)
-	go pool(backend, chBack)
-	go pool(frontend, chFrontIf)
+	items1 := zmq.NewPoller()
+	items1.Register(backend, zmq.POLLIN)
+	items2 := zmq.NewPoller()
+	items2.Register(backend, zmq.POLLIN)
+	items2.Register(frontend, zmq.POLLIN)
 
-	chNil := make(chan string) // a channel that is never used
 	for client_nbr > 0 {
-		chFront := chNil
 		//  Poll frontend only if we have available workers
+		var events []zmq.State
 		if len(worker_queue) > 0 {
-			chFront = chFrontIf
+			events, _ = items2.Poll(-1)
+		} else {
+			events, _ = items1.Poll(-1)
 		}
-		select {
-		case msg := <-chBack: //  Handle worker activity on backend
+
+		//  Handle worker activity on backend
+		if events[0]&zmq.POLLIN != 0 {
 			//  Queue worker identity for load-balancing
-			worker_id := msg
+			worker_id, _ := backend.Recv(0)
 			if !(len(worker_queue) < NBR_WORKERS) {
 				panic("!(len(worker_queue) < NBR_WORKERS)")
 			}
 			worker_queue = append(worker_queue, worker_id)
 
 			//  Second frame is empty
-			empty := <-chBack
+			empty, _ := backend.Recv(0)
 			if empty != "" {
 				panic(fmt.Sprintf("empty is not \"\": %q", empty))
 			}
 
 			//  Third frame is READY or else a client reply identity
-			client_id := <-chBack
+			client_id, _ := backend.Recv(0)
 
 			//  If client reply, send rest back to frontend
 			if client_id != "READY" {
-				empty := <-chBack
+				empty, _ := backend.Recv(0)
 				if empty != "" {
 					panic(fmt.Sprintf("empty is not \"\": %q", empty))
 				}
-				reply := <-chBack
+				reply, _ := backend.Recv(0)
 				frontend.Send(client_id, zmq.SNDMORE)
 				frontend.Send("", zmq.SNDMORE)
 				frontend.Send(reply, 0)
 				client_nbr--
 			}
-		case msg := <-chFront: //  Here is how we handle a client request:
+		}
+
+		//  Here is how we handle a client request:
+		if len(events) == 2 && events[1]&zmq.POLLIN != 0 {
 			//  Now get next client request, route to last-used worker
 			//  Client request is [identity][empty][request]
-			client_id := msg
-			empty := <-chFront
+			client_id, _ := frontend.Recv(0)
+			empty, _ := frontend.Recv(0)
 			if empty != "" {
 				panic(fmt.Sprintf("empty is not \"\": %q", empty))
 			}
-			request := <-chFront
+			request, _ := frontend.Recv(0)
 
 			backend.Send(worker_queue[0], zmq.SNDMORE)
 			backend.Send("", zmq.SNDMORE)

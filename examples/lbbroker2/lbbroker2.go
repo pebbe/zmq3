@@ -71,8 +71,7 @@ func main() {
 	frontend.Bind("ipc://frontend.ipc")
 	backend.Bind("ipc://backend.ipc")
 
-	client_nbr := 0
-	for ; client_nbr < NBR_CLIENTS; client_nbr++ {
+	for client_nbr := 0; client_nbr < NBR_CLIENTS; client_nbr++ {
 		go client_task()
 	}
 	for worker_nbr := 0; worker_nbr < NBR_WORKERS; worker_nbr++ {
@@ -82,48 +81,62 @@ func main() {
 	//  Queue of available workers
 	workers := make([]string, 0, 10)
 
-	pool := func(soc *zmq.Socket, ch chan []string) {
-		for {
-			msg, err := soc.RecvMessage(0)
-			if err != nil {
-				panic(err)
-			}
-			ch <- msg
-		}
-	}
-	chBack := make(chan []string, 100)
-	chFrontIf := make(chan []string, 100)
-	go pool(backend, chBack)
-	go pool(frontend, chFrontIf)
+	items1 := zmq.NewPoller()
+	items1.Register(backend, zmq.POLLIN)
+	items2 := zmq.NewPoller()
+	items2.Register(backend, zmq.POLLIN)
+	items2.Register(frontend, zmq.POLLIN)
 
-	chNil := make(chan []string) // a channel that is never used
-	for client_nbr > 0 {
-		chFront := chNil
+	for {
 		//  Poll frontend only if we have available workers
+		var events []zmq.State
+		var err error
 		if len(workers) > 0 {
-			chFront = chFrontIf
+			events, err = items2.Poll(-1)
+		} else {
+			events, err = items1.Poll(-1)
 		}
-		select {
-		case msg := <-chBack:
+		if err != nil {
+			break //  Interrupted
+		}
+
+		//  Handle worker activity on backend
+		if events[0]&zmq.POLLIN != 0 {
 			//  Use worker identity for load-balancing
-			worker_id := msg[0]
-			msg = msg[2:]
+			msg, err := backend.RecvMessage(0)
+			if err != nil {
+				break //  Interrupted
+			}
+			identity, msg := unwrap(msg)
+			workers = append(workers, identity)
 
-			workers = append(workers, worker_id)
-
-			//  If client reply, send rest back to frontend
+			//  Forward message to client if it's not a READY
 			if msg[0] != WORKER_READY {
 				frontend.SendMessage(msg)
-				client_nbr--
 			}
-		case msg := <-chFront:
-			//  Route client request to first available worker
-			backend.SendMessage(workers[0], "", msg)
-
-			//  Dequeue and drop the next worker identity
-			workers = workers[1:]
+		}
+		if len(events) == 2 && events[1]&zmq.POLLIN != 0 {
+			//  Get client request, route to first available worker
+			msg, err := frontend.RecvMessage(0)
+			if err == nil {
+				backend.SendMessage(workers[0], "", msg)
+				workers = workers[1:]
+			}
 		}
 	}
 
 	time.Sleep(100 * time.Millisecond)
+}
+
+//  Pops frame off front of message and returns it as 'head'
+//  If next frame is empty, pops that empty frame.
+//  Return remaining frames of message as 'tail'
+func unwrap(msg []string) (head string, tail []string) {
+	head = msg[0]
+	if len(msg) > 1 && msg[1] == "" {
+		tail = msg[2:]
+	} else {
+		tail = msg[1:]
+	}
+	return
 }
