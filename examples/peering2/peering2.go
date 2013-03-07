@@ -8,9 +8,9 @@ import (
 	zmq "github.com/pebbe/zmq3"
 
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
-	//"strings"
 	"time"
 )
 
@@ -37,14 +37,14 @@ func client_task(name string, i int) {
 
 	for {
 		//  Send request, get reply
-		client.Send("HELLO from " + clientname, 0)
+		client.Send("HELLO from "+clientname, 0)
 		reply, err := client.Recv(0)
 		if err != nil {
 			fmt.Println("client_task interrupted", name)
 			break //  Interrupted
 		}
 		fmt.Printf("%s: %s\n", clientname, reply)
-		time.Sleep(time.Duration(500 + rand.Intn(1000)) * time.Millisecond)
+		time.Sleep(time.Duration(500+rand.Intn(1000)) * time.Millisecond)
 	}
 }
 
@@ -72,7 +72,7 @@ func worker_task(name string, i int) {
 
 		i := len(msg) - 1
 		fmt.Printf("%s: %s\n", workername, msg[i])
-		worker.SendMessage(msg[:i], "OK from " + workername )
+		worker.SendMessage(msg[:i], "OK from "+workername)
 	}
 }
 
@@ -87,7 +87,7 @@ func main() {
 		fmt.Println("syntax: peering2 me {you}…")
 		os.Exit(1)
 	}
-	for _, peer := range(os.Args[2:]) {
+	for _, peer := range os.Args[2:] {
 		peers[peer] = true
 	}
 
@@ -139,28 +139,37 @@ func main() {
 	//  Least recently used queue of available workers
 	workers := make([]string, 0)
 
-	chLocalbe := pool(localbe)
-	chLocalfe := pool(localfe)
-	chCloudbe := pool(cloudbe)
-	chCloudfe := pool(cloudfe)
+	backends := zmq.NewPoller()
+	backends.Register(localbe, zmq.POLLIN)
+	backends.Register(cloudbe, zmq.POLLIN)
+	frontends := zmq.NewPoller()
+	frontends.Register(localfe, zmq.POLLIN)
+	frontends.Register(cloudfe, zmq.POLLIN)
 
 	msg := []string{}
 	number_of_peers := len(os.Args) - 2
-	chWait := make(<-chan time.Time)
-	chTimeout := chWait
-LOOP:
+
 	for {
 		//  First, route any waiting replies from workers
 		//  If we have no workers anyhow, wait indefinitely
-		if len(workers) > 0 {
-			chTimeout = time.After(time.Second)
-		} else {
-			chTimeout = chWait
+		timeout := time.Second
+		if len(workers) == 0 {
+			timeout = -1
 		}
+		events, err := backends.Poll(timeout)
+		if err != nil {
+			log.Println(err)
+			break //  Interrupted
+		}
+
 		msg = msg[:]
-		select {
-		case msg = <-chLocalbe:
+		if events[0]&zmq.POLLIN != 0 {
 			//  Handle reply from local worker
+			msg, err = localbe.RecvMessage(0)
+			if err != nil {
+				log.Println(err)
+				break //  Interrupted
+			}
 			var identity string
 			identity, msg = unwrap(msg)
 			workers = append(workers, identity)
@@ -169,11 +178,16 @@ LOOP:
 			if msg[0] == WORKER_READY {
 				msg = msg[0:0]
 			}
-		case msg = <-chCloudbe:
+		} else if events[1]&zmq.POLLIN != 0 {
 			//  Or handle reply from peer broker
+			msg, err = cloudbe.RecvMessage(0)
+			if err != nil {
+				log.Println(err)
+				break //  Interrupted
+			}
+
 			//  We don't use peer broker identity for anything
 			_, msg = unwrap(msg)
-		case <-chTimeout:
 		}
 
 		if len(msg) > 0 {
@@ -192,18 +206,21 @@ LOOP:
 		//  cloud capacity:
 
 		for len(workers) > 0 {
+			events, err := frontends.Poll(0)
+			if err != nil {
+				log.Println(err)
+				break //  Interrupted
+			}
 			var reroutable bool
 			//  We'll do peer brokers first, to prevent starvation
-			select {
-			case msg = <-chCloudfe:
+			if events[1]&zmq.POLLIN != 0 {
+				msg, _ = cloudfe.RecvMessage(0)
 				reroutable = false
-			default:
-				select {
-				case msg = <-chLocalfe:
-					reroutable = true
-				default:
-					continue LOOP //  No work, go back to backends
-				}
+			} else if events[0]&zmq.POLLIN != 0 {
+				msg, _ = localfe.RecvMessage(0)
+				reroutable = true
+			} else {
+				break //  No work, go back to backends
 			}
 
 			//  If reroutable, send to cloud 20% of the time
@@ -220,22 +237,6 @@ LOOP:
 		}
 	}
 	fmt.Println("Exit")
-}
-
-// Return channel for reading messages from socket
-func pool(soc *zmq.Socket) chan []string {
-	ch := make(chan []string)
-	go func() {
-		for {
-			msg, err := soc.RecvMessage(0)
-			if err != nil {
-				close(ch)
-				return
-			}
-			ch <- msg
-		}
-	}()
-	return ch
 }
 
 //  Pops frame off front of message and returns it as 'head'
