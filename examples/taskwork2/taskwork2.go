@@ -30,31 +30,15 @@ func main() {
 	controller.SetSubscribe("")
 
 	//  Process messages from receiver and controller
-	chReceive := make(chan string)
-	chControle := make(chan string)
-	go func() {
-		for {
-			msg, e := receiver.Recv(0)
-			if e != nil {
-				break
-			}
-			chReceive <- msg
-		}
-	}()
-	go func() {
-		for {
-			msg, e := controller.Recv(0)
-			if e != nil {
-				break
-			}
-			chControle <- msg
-		}
-	}()
-
+	items := zmq.NewPoller()
+	items.Register(receiver, zmq.POLLIN)
+	items.Register(controller, zmq.POLLIN)
 	//  Process messages from both sockets
-	for run := true; run; {
-		select {
-		case msg := <-chReceive:
+	for {
+		events, _ := items.Poll(-1)
+		if events[0]&zmq.POLLIN != 0 {
+			msg, _ := receiver.Recv(0)
+
 			//  Do the work
 			t, _ := strconv.Atoi(msg)
 			time.Sleep(time.Duration(t) * time.Millisecond)
@@ -64,9 +48,10 @@ func main() {
 
 			//  Simple progress indicator for the viewer
 			fmt.Printf(".")
-		case <-chControle:
-			//  Any controller command acts as 'KILL'
-			run = false
+		}
+		//  Any controller command acts as 'KILL'
+		if events[1]&zmq.POLLIN != 0 {
+			break //  Exit loop
 		}
 	}
 	fmt.Println()

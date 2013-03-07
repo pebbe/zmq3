@@ -302,6 +302,10 @@ func (soc Socket) String() string {
 /*
 Create 0MQ socket.
 
+WARNING:
+The Socket is not thread safe. This means that you cannot access the same Socket
+from different goroutines without using something like a mutex.
+
 For a description of socket types, see: http://api.zeromq.org/3-2:zmq-socket#toc3
 */
 func NewSocket(t Type) (soc *Socket, err error) {
