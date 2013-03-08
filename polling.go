@@ -6,6 +6,7 @@ package zmq3
 import "C"
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -80,4 +81,12 @@ func (p *Poller) Poll(timeout time.Duration) (map[*Socket]State, error) {
 		}
 	}
 	return mp, nil
+}
+
+func (p *Poller) String() string {
+	str := make([]string, 0)
+	for i, poll := range p.items {
+		str = append(str, fmt.Sprintf("%v%v", p.socks[i], State(poll.events)))
+	}
+	return fmt.Sprint("Poller", str)
 }
