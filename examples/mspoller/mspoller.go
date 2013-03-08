@@ -31,12 +31,12 @@ func main() {
 	for {
 		sockets, _ := poller.Poll(-1)
 		for socket := range sockets {
-			switch {
-			case socket == receiver:
+			switch socket {
+			case receiver:
 				task, _ := receiver.Recv(0)
 				//  Process task
 				fmt.Println("Got task:", task)
-			case socket == subscriber:
+			case subscriber:
 				update, _ := subscriber.Recv(0)
 				//  Process weather update
 				fmt.Println("Got weather update:", update)

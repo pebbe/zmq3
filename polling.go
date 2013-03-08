@@ -50,11 +50,11 @@ Example:
     for {
         sockets, _ := poller.Poll(-1)
         for socket := range sockets {
-            switch {
-            case socket == socket0:
+            switch socket {
+            case socket0:
                 msg, _ := socket0.Recv(0)
                 //  Process msg
-            case socket == socket1:
+            case socket1:
                 msg, _ := socket1.Recv(0)
                 //  Process msg
             }

@@ -25,8 +25,8 @@ func main() {
 	for {
 		sockets, _ := poller.Poll(-1)
 		for socket := range sockets {
-			switch {
-			case socket == frontend:
+			switch socket {
+			case frontend:
 				for {
 					msg, _ := frontend.Recv(0)
 					if more, _ := frontend.GetRcvmore(); more {
@@ -36,7 +36,7 @@ func main() {
 						break
 					}
 				}
-			case socket == backend:
+			case backend:
 				for {
 					msg, _ := backend.Recv(0)
 					if more, _ := backend.GetRcvmore(); more {

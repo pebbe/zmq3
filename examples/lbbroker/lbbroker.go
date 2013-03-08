@@ -118,8 +118,8 @@ func main() {
 			sockets, _ = poller1.Poll(-1)
 		}
 		for socket := range sockets {
-			switch {
-			case socket == backend:
+			switch socket {
+			case backend:
 
 				//  Handle worker activity on backend
 				//  Queue worker identity for load-balancing
@@ -151,7 +151,7 @@ func main() {
 					client_nbr--
 				}
 
-			case socket == frontend:
+			case frontend:
 				//  Here is how we handle a client request:
 
 				//  Now get next client request, route to last-used worker

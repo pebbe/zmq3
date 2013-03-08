@@ -38,8 +38,8 @@ LOOP:
 	for {
 		sockets, _ := poller.Poll(-1)
 		for socket := range sockets {
-			switch {
-			case socket == receiver:
+			switch socket {
+			case receiver:
 				msg, _ := receiver.Recv(0)
 
 				//  Do the work
@@ -51,7 +51,7 @@ LOOP:
 
 				//  Simple progress indicator for the viewer
 				fmt.Printf(".")
-			case socket == controller:
+			case controller:
 				//  Any controller command acts as 'KILL'
 				break LOOP //  Exit loop
 			}
