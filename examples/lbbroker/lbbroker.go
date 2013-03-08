@@ -103,72 +103,76 @@ func main() {
 	//  Queue of available workers
 	worker_queue := make([]string, 0, 10)
 
-	items1 := zmq.NewPoller()
-	items1.Register(backend, zmq.POLLIN)
-	items2 := zmq.NewPoller()
-	items2.Register(backend, zmq.POLLIN)
-	items2.Register(frontend, zmq.POLLIN)
+	poller1 := zmq.NewPoller()
+	poller1.Register(backend, zmq.POLLIN)
+	poller2 := zmq.NewPoller()
+	poller2.Register(backend, zmq.POLLIN)
+	poller2.Register(frontend, zmq.POLLIN)
 
 	for client_nbr > 0 {
 		//  Poll frontend only if we have available workers
-		var events []zmq.State
+		var sockets map[*zmq.Socket]zmq.State
 		if len(worker_queue) > 0 {
-			events, _ = items2.Poll(-1)
+			sockets, _ = poller2.Poll(-1)
 		} else {
-			events, _ = items1.Poll(-1)
+			sockets, _ = poller1.Poll(-1)
 		}
+		for socket := range sockets {
+			switch {
+			case socket == backend:
 
-		//  Handle worker activity on backend
-		if events[0]&zmq.POLLIN != 0 {
-			//  Queue worker identity for load-balancing
-			worker_id, _ := backend.Recv(0)
-			if !(len(worker_queue) < NBR_WORKERS) {
-				panic("!(len(worker_queue) < NBR_WORKERS)")
-			}
-			worker_queue = append(worker_queue, worker_id)
+				//  Handle worker activity on backend
+				//  Queue worker identity for load-balancing
+				worker_id, _ := backend.Recv(0)
+				if !(len(worker_queue) < NBR_WORKERS) {
+					panic("!(len(worker_queue) < NBR_WORKERS)")
+				}
+				worker_queue = append(worker_queue, worker_id)
 
-			//  Second frame is empty
-			empty, _ := backend.Recv(0)
-			if empty != "" {
-				panic(fmt.Sprintf("empty is not \"\": %q", empty))
-			}
-
-			//  Third frame is READY or else a client reply identity
-			client_id, _ := backend.Recv(0)
-
-			//  If client reply, send rest back to frontend
-			if client_id != "READY" {
+				//  Second frame is empty
 				empty, _ := backend.Recv(0)
 				if empty != "" {
 					panic(fmt.Sprintf("empty is not \"\": %q", empty))
 				}
-				reply, _ := backend.Recv(0)
-				frontend.Send(client_id, zmq.SNDMORE)
-				frontend.Send("", zmq.SNDMORE)
-				frontend.Send(reply, 0)
-				client_nbr--
+
+				//  Third frame is READY or else a client reply identity
+				client_id, _ := backend.Recv(0)
+
+				//  If client reply, send rest back to frontend
+				if client_id != "READY" {
+					empty, _ := backend.Recv(0)
+					if empty != "" {
+						panic(fmt.Sprintf("empty is not \"\": %q", empty))
+					}
+					reply, _ := backend.Recv(0)
+					frontend.Send(client_id, zmq.SNDMORE)
+					frontend.Send("", zmq.SNDMORE)
+					frontend.Send(reply, 0)
+					client_nbr--
+				}
+
+			case socket == frontend:
+				//  Here is how we handle a client request:
+
+				//  Now get next client request, route to last-used worker
+				//  Client request is [identity][empty][request]
+				client_id, _ := frontend.Recv(0)
+				empty, _ := frontend.Recv(0)
+				if empty != "" {
+					panic(fmt.Sprintf("empty is not \"\": %q", empty))
+				}
+				request, _ := frontend.Recv(0)
+
+				backend.Send(worker_queue[0], zmq.SNDMORE)
+				backend.Send("", zmq.SNDMORE)
+				backend.Send(client_id, zmq.SNDMORE)
+				backend.Send("", zmq.SNDMORE)
+				backend.Send(request, 0)
+
+				//  Dequeue and drop the next worker identity
+				worker_queue = worker_queue[1:]
+
 			}
-		}
-
-		//  Here is how we handle a client request:
-		if len(events) == 2 && events[1]&zmq.POLLIN != 0 {
-			//  Now get next client request, route to last-used worker
-			//  Client request is [identity][empty][request]
-			client_id, _ := frontend.Recv(0)
-			empty, _ := frontend.Recv(0)
-			if empty != "" {
-				panic(fmt.Sprintf("empty is not \"\": %q", empty))
-			}
-			request, _ := frontend.Recv(0)
-
-			backend.Send(worker_queue[0], zmq.SNDMORE)
-			backend.Send("", zmq.SNDMORE)
-			backend.Send(client_id, zmq.SNDMORE)
-			backend.Send("", zmq.SNDMORE)
-			backend.Send(request, 0)
-
-			//  Dequeue and drop the next worker identity
-			worker_queue = worker_queue[1:]
 		}
 	}
 

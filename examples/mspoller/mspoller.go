@@ -29,16 +29,18 @@ func main() {
 	poller.Register(subscriber, zmq.POLLIN)
 	//  Process messages from both sockets
 	for {
-		items, _ := poller.Poll(-1)
-		if items[0]&zmq.POLLIN != 0 {
-			task, _ := receiver.Recv(0)
-			//  Process task
-			fmt.Println("Got task:", task)
-		}
-		if items[1]&zmq.POLLIN != 0 {
-			update, _ := subscriber.Recv(0)
-			//  Process weather update
-			fmt.Println("Got weather update:", update)
+		sockets, _ := poller.Poll(-1)
+		for socket := range sockets {
+			switch {
+			case socket == receiver:
+				task, _ := receiver.Recv(0)
+				//  Process task
+				fmt.Println("Got task:", task)
+			case socket == subscriber:
+				update, _ := subscriber.Recv(0)
+				//  Process weather update
+				fmt.Println("Got weather update:", update)
+			}
 		}
 	}
 }

@@ -30,28 +30,31 @@ func main() {
 	controller.SetSubscribe("")
 
 	//  Process messages from receiver and controller
-	items := zmq.NewPoller()
-	items.Register(receiver, zmq.POLLIN)
-	items.Register(controller, zmq.POLLIN)
+	poller := zmq.NewPoller()
+	poller.Register(receiver, zmq.POLLIN)
+	poller.Register(controller, zmq.POLLIN)
 	//  Process messages from both sockets
+LOOP:
 	for {
-		events, _ := items.Poll(-1)
-		if events[0]&zmq.POLLIN != 0 {
-			msg, _ := receiver.Recv(0)
+		sockets, _ := poller.Poll(-1)
+		for socket := range sockets {
+			switch {
+			case socket == receiver:
+				msg, _ := receiver.Recv(0)
 
-			//  Do the work
-			t, _ := strconv.Atoi(msg)
-			time.Sleep(time.Duration(t) * time.Millisecond)
+				//  Do the work
+				t, _ := strconv.Atoi(msg)
+				time.Sleep(time.Duration(t) * time.Millisecond)
 
-			//  Send results to sink
-			sender.Send(msg, 0)
+				//  Send results to sink
+				sender.Send(msg, 0)
 
-			//  Simple progress indicator for the viewer
-			fmt.Printf(".")
-		}
-		//  Any controller command acts as 'KILL'
-		if events[1]&zmq.POLLIN != 0 {
-			break //  Exit loop
+				//  Simple progress indicator for the viewer
+				fmt.Printf(".")
+			case socket == controller:
+				//  Any controller command acts as 'KILL'
+				break LOOP //  Exit loop
+			}
 		}
 	}
 	fmt.Println()

@@ -81,46 +81,50 @@ func main() {
 	//  Queue of available workers
 	workers := make([]string, 0, 10)
 
-	items1 := zmq.NewPoller()
-	items1.Register(backend, zmq.POLLIN)
-	items2 := zmq.NewPoller()
-	items2.Register(backend, zmq.POLLIN)
-	items2.Register(frontend, zmq.POLLIN)
+	poller1 := zmq.NewPoller()
+	poller1.Register(backend, zmq.POLLIN)
+	poller2 := zmq.NewPoller()
+	poller2.Register(backend, zmq.POLLIN)
+	poller2.Register(frontend, zmq.POLLIN)
 
+LOOP:
 	for {
 		//  Poll frontend only if we have available workers
-		var events []zmq.State
+		var sockets map[*zmq.Socket]zmq.State
 		var err error
 		if len(workers) > 0 {
-			events, err = items2.Poll(-1)
+			sockets, err = poller2.Poll(-1)
 		} else {
-			events, err = items1.Poll(-1)
+			sockets, err = poller1.Poll(-1)
 		}
 		if err != nil {
 			break //  Interrupted
 		}
+		for socket := range sockets {
+			switch {
+			case socket == backend:
+				//  Handle worker activity on backend
 
-		//  Handle worker activity on backend
-		if events[0]&zmq.POLLIN != 0 {
-			//  Use worker identity for load-balancing
-			msg, err := backend.RecvMessage(0)
-			if err != nil {
-				break //  Interrupted
-			}
-			identity, msg := unwrap(msg)
-			workers = append(workers, identity)
+				//  Use worker identity for load-balancing
+				msg, err := backend.RecvMessage(0)
+				if err != nil {
+					break LOOP //  Interrupted
+				}
+				identity, msg := unwrap(msg)
+				workers = append(workers, identity)
 
-			//  Forward message to client if it's not a READY
-			if msg[0] != WORKER_READY {
-				frontend.SendMessage(msg)
-			}
-		}
-		if len(events) == 2 && events[1]&zmq.POLLIN != 0 {
-			//  Get client request, route to first available worker
-			msg, err := frontend.RecvMessage(0)
-			if err == nil {
-				backend.SendMessage(workers[0], "", msg)
-				workers = workers[1:]
+				//  Forward message to client if it's not a READY
+				if msg[0] != WORKER_READY {
+					frontend.SendMessage(msg)
+				}
+
+			case socket == frontend:
+				//  Get client request, route to first available worker
+				msg, err := frontend.RecvMessage(0)
+				if err == nil {
+					backend.SendMessage(workers[0], "", msg)
+					workers = workers[1:]
+				}
 			}
 		}
 	}

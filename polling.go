@@ -11,11 +11,14 @@ import (
 
 type Poller struct {
 	items []C.zmq_pollitem_t
+	socks []*Socket
 }
 
 // Create a new Poller
 func NewPoller() *Poller {
-	return &Poller{items: make([]C.zmq_pollitem_t, 0)}
+	return &Poller{
+		items: make([]C.zmq_pollitem_t, 0),
+		socks: make([]*Socket, 0)}
 }
 
 // Add items to the poller
@@ -27,12 +30,16 @@ func (p *Poller) Register(soc *Socket, events State) {
 	item.fd = 0
 	item.events = C.short(events)
 	p.items = append(p.items, item)
+	p.socks = append(p.socks, soc)
 }
 
 /*
 Input/output multiplexing
 
 If timeout < 0, wait forever until a matching event is detected
+
+Only sockets with matching socket states are returned in the map.
+The values in the map are the actual sockets states.
 
 Example:
 
@@ -41,18 +48,21 @@ Example:
     poller.Register(socket1, zmq.POLLIN)
     //  Process messages from both sockets
     for {
-        items, _ := poller.Poll(-1)
-        if items[0]&zmq.POLLIN != 0 {
-            msg, _ := socket0.Recv(0)
-            //  Process msg
-        }
-        if items[1]&zmq.POLLIN != 0 {
-            msg, _ := socket1.Recv(0)
-            //  Process msg
+        sockets, _ := poller.Poll(-1)
+        for socket := range sockets {
+            switch {
+            case socket == socket0:
+                msg, _ := socket0.Recv(0)
+                //  Process msg
+            case socket == socket1:
+                msg, _ := socket1.Recv(0)
+                //  Process msg
+            }
         }
     }
 */
-func (p *Poller) Poll(timeout time.Duration) ([]State, error) {
+func (p *Poller) Poll(timeout time.Duration) (map[*Socket]State, error) {
+	mp := make(map[*Socket]State)
 	t := timeout
 	if t > 0 {
 		t = t / time.Millisecond
@@ -62,11 +72,12 @@ func (p *Poller) Poll(timeout time.Duration) ([]State, error) {
 	}
 	rv, err := C.zmq_poll(&p.items[0], C.int(len(p.items)), C.long(t))
 	if rv < 0 {
-		return []State{}, errget(err)
+		return mp, errget(err)
 	}
-	states := make([]State, len(p.items))
 	for i, it := range p.items {
-		states[i] = State(it.revents)
+		if it.events&it.revents != 0 {
+			mp[p.socks[i]] = State(it.revents)
+		}
 	}
-	return states, nil
+	return mp, nil
 }

@@ -156,14 +156,14 @@ func main() {
 		if len(workers) == 0 {
 			timeout = -1
 		}
-		events, err := backends.Poll(timeout)
+		sockets, err := backends.Poll(timeout)
 		if err != nil {
 			log.Println(err)
 			break //  Interrupted
 		}
 
 		msg = msg[:]
-		if events[0]&zmq.POLLIN != 0 {
+		if _, ok := sockets[localbe]; ok {
 			//  Handle reply from local worker
 			msg, err = localbe.RecvMessage(0)
 			if err != nil {
@@ -178,7 +178,7 @@ func main() {
 			if msg[0] == WORKER_READY {
 				msg = msg[0:0]
 			}
-		} else if events[1]&zmq.POLLIN != 0 {
+		} else if _, ok := sockets[cloudbe]; ok {
 			//  Or handle reply from peer broker
 			msg, err = cloudbe.RecvMessage(0)
 			if err != nil {
@@ -206,17 +206,17 @@ func main() {
 		//  cloud capacity:
 
 		for len(workers) > 0 {
-			events, err := frontends.Poll(0)
+			sockets, err := frontends.Poll(0)
 			if err != nil {
 				log.Println(err)
 				break //  Interrupted
 			}
 			var reroutable bool
 			//  We'll do peer brokers first, to prevent starvation
-			if events[1]&zmq.POLLIN != 0 {
+			if _, ok := sockets[cloudfe]; ok {
 				msg, _ = cloudfe.RecvMessage(0)
 				reroutable = false
-			} else if events[0]&zmq.POLLIN != 0 {
+			} else if _, ok := sockets[localfe]; ok {
 				msg, _ = localfe.RecvMessage(0)
 				reroutable = true
 			} else {

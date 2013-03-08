@@ -43,17 +43,17 @@ func main() {
 	//  status messages back from peers. The zmq_poll timeout defines
 	//  our own heartbeat:
 
-	items := zmq.NewPoller()
-	items.Register(statefe, zmq.POLLIN)
+	poller := zmq.NewPoller()
+	poller.Register(statefe, zmq.POLLIN)
 	for {
 		//  Poll for activity, or 1 second timeout
-		events, err := items.Poll(time.Second)
+		sockets, err := poller.Poll(time.Second)
 		if err != nil {
 			break
 		}
 
 		//  Handle incoming status messages
-		if events[0] & zmq.POLLIN != 0 {
+		if _, ok := sockets[statefe]; ok {
 			msg, _ := statefe.RecvMessage(0)
 			peer_name := msg[0]
 			available := msg[1]

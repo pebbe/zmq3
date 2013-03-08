@@ -17,32 +17,34 @@ func main() {
 	backend.Bind("tcp://*:5560")
 
 	//  Initialize poll set
-	items := zmq.NewPoller()
-	items.Register(frontend, zmq.POLLIN)
-	items.Register(backend, zmq.POLLIN)
+	poller := zmq.NewPoller()
+	poller.Register(frontend, zmq.POLLIN)
+	poller.Register(backend, zmq.POLLIN)
 
 	//  Switch messages between sockets
 	for {
-		events, _ := items.Poll(-1)
-		if events[0]&zmq.POLLIN != 0 {
-			for {
-				msg, _ := frontend.Recv(0)
-				if more, _ := frontend.GetRcvmore(); more {
-					backend.Send(msg, zmq.SNDMORE)
-				} else {
-					backend.Send(msg, 0)
-					break
+		sockets, _ := poller.Poll(-1)
+		for socket := range sockets {
+			switch {
+			case socket == frontend:
+				for {
+					msg, _ := frontend.Recv(0)
+					if more, _ := frontend.GetRcvmore(); more {
+						backend.Send(msg, zmq.SNDMORE)
+					} else {
+						backend.Send(msg, 0)
+						break
+					}
 				}
-			}
-		}
-		if events[1]&zmq.POLLIN != 0 {
-			for {
-				msg, _ := backend.Recv(0)
-				if more, _ := backend.GetRcvmore(); more {
-					frontend.Send(msg, zmq.SNDMORE)
-				} else {
-					frontend.Send(msg, 0)
-					break
+			case socket == backend:
+				for {
+					msg, _ := backend.Recv(0)
+					if more, _ := backend.GetRcvmore(); more {
+						frontend.Send(msg, zmq.SNDMORE)
+					} else {
+						frontend.Send(msg, 0)
+						break
+					}
 				}
 			}
 		}
