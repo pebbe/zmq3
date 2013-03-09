@@ -83,6 +83,7 @@ func (p *Poller) Poll(timeout time.Duration) (map[*Socket]State, error) {
 	return mp, nil
 }
 
+// Poller as string.
 func (p *Poller) String() string {
 	str := make([]string, 0)
 	for i, poll := range p.items {
