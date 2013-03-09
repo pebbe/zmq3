@@ -44,7 +44,7 @@ func main() {
 	defer broker.Close()
 
 	broker.Bind("tcp://*:5671")
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 
 	for worker_nbr := 0; worker_nbr < NBR_WORKERS; worker_nbr++ {
 		go worker_task()

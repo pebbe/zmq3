@@ -93,7 +93,7 @@ func main() {
 
 	self := os.Args[1]
 	fmt.Println("I: preparing broker at", self)
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 
 	//  Bind cloud frontend to endpoint
 	cloudfe, _ := zmq.NewSocket(zmq.ROUTER)

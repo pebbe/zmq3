@@ -33,7 +33,7 @@ func main() {
 	sink.Send("0", 0)
 
 	//  Initialize random number generator
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 
 	//  Send 100 tasks
 	total_msec := 0

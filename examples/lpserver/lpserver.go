@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 
 	server, _ := zmq.NewSocket(zmq.REP)
 	defer server.Close()

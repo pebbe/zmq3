@@ -22,7 +22,7 @@ func main() {
 	publisher.Bind("ipc://weather.ipc")
 
 	//  Initialize random number generator
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 
 	// loop for a while aparently
 	for {

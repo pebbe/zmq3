@@ -119,7 +119,7 @@ func main() {
 	}
 	self = os.Args[1]
 	fmt.Printf("I: preparing broker at %s…\n", self)
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 
 	//  Prepare local frontend and backend
 	localfe, _ := zmq.NewSocket(zmq.ROUTER)

@@ -107,7 +107,7 @@ func server_worker() {
 //  waits for the server to finish.
 
 func main() {
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 
 	go client_task()
 	go client_task()
