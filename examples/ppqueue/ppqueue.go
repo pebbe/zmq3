@@ -85,10 +85,10 @@ func main() {
 	heartbeat_at := time.Tick(HEARTBEAT_INTERVAL)
 
 	poller1 := zmq.NewPoller()
-	poller1.Register(backend, zmq.POLLIN)
+	poller1.Add(backend, zmq.POLLIN)
 	poller2 := zmq.NewPoller()
-	poller2.Register(backend, zmq.POLLIN)
-	poller2.Register(frontend, zmq.POLLIN)
+	poller2.Add(backend, zmq.POLLIN)
+	poller2.Add(frontend, zmq.POLLIN)
 
 	for {
 		//  Poll frontend only if we have available workers

@@ -25,8 +25,8 @@ func main() {
 
 	//  Initialize poll set
 	poller := zmq.NewPoller()
-	poller.Register(receiver, zmq.POLLIN)
-	poller.Register(subscriber, zmq.POLLIN)
+	poller.Add(receiver, zmq.POLLIN)
+	poller.Add(subscriber, zmq.POLLIN)
 	//  Process messages from both sockets
 	for {
 		sockets, _ := poller.Poll(-1)

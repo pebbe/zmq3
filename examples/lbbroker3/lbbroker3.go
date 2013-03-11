@@ -115,10 +115,10 @@ func main() {
 	handlers[backend] = handle_backend
 
 	poller1 := zmq.NewPoller()
-	poller1.Register(backend, zmq.POLLIN)
+	poller1.Add(backend, zmq.POLLIN)
 	poller2 := zmq.NewPoller()
-	poller2.Register(backend, zmq.POLLIN)
-	poller2.Register(frontend, zmq.POLLIN)
+	poller2.Add(backend, zmq.POLLIN)
+	poller2.Add(frontend, zmq.POLLIN)
 
 LOOP:
 	for {

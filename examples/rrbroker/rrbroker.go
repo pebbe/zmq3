@@ -18,8 +18,8 @@ func main() {
 
 	//  Initialize poll set
 	poller := zmq.NewPoller()
-	poller.Register(frontend, zmq.POLLIN)
-	poller.Register(backend, zmq.POLLIN)
+	poller.Add(frontend, zmq.POLLIN)
+	poller.Add(backend, zmq.POLLIN)
 
 	//  Switch messages between sockets
 	for {

@@ -44,7 +44,7 @@ func main() {
 	//  our own heartbeat:
 
 	poller := zmq.NewPoller()
-	poller.Register(statefe, zmq.POLLIN)
+	poller.Add(statefe, zmq.POLLIN)
 	for {
 		//  Poll for activity, or 1 second timeout
 		sockets, err := poller.Poll(time.Second)

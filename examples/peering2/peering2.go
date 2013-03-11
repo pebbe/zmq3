@@ -140,11 +140,11 @@ func main() {
 	workers := make([]string, 0)
 
 	backends := zmq.NewPoller()
-	backends.Register(localbe, zmq.POLLIN)
-	backends.Register(cloudbe, zmq.POLLIN)
+	backends.Add(localbe, zmq.POLLIN)
+	backends.Add(cloudbe, zmq.POLLIN)
 	frontends := zmq.NewPoller()
-	frontends.Register(localfe, zmq.POLLIN)
-	frontends.Register(cloudfe, zmq.POLLIN)
+	frontends.Add(localfe, zmq.POLLIN)
+	frontends.Add(cloudfe, zmq.POLLIN)
 
 	msg := []string{}
 	number_of_peers := len(os.Args) - 2

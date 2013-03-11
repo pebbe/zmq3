@@ -28,7 +28,7 @@ func main() {
 	client.Connect(SERVER_ENDPOINT)
 
 	poller := zmq.NewPoller()
-	poller.Register(client, zmq.POLLIN)
+	poller.Add(client, zmq.POLLIN)
 
 	sequence := 0
 	retries_left := REQUEST_RETRIES
@@ -76,7 +76,7 @@ func main() {
 					client.Connect(SERVER_ENDPOINT)
 					// Recreate poller for new client
 					poller = zmq.NewPoller()
-					poller.Register(client, zmq.POLLIN)
+					poller.Add(client, zmq.POLLIN)
 					//  Send request again, on new socket
 					client.SendMessage(sequence)
 				}

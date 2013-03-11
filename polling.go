@@ -25,7 +25,7 @@ func NewPoller() *Poller {
 // Add items to the poller
 //
 // Events is a bitwise OR of zmq.POLLIN and zmq.POLLOUT
-func (p *Poller) Register(soc *Socket, events State) {
+func (p *Poller) Add(soc *Socket, events State) {
 	var item C.zmq_pollitem_t
 	item.socket = soc.soc
 	item.fd = 0
@@ -45,8 +45,8 @@ The values in the map are the actual sockets states.
 Example:
 
     poller := zmq.NewPoller()
-    poller.Register(socket0, zmq.POLLIN)
-    poller.Register(socket1, zmq.POLLIN)
+    poller.Add(socket0, zmq.POLLIN)
+    poller.Add(socket1, zmq.POLLIN)
     //  Process messages from both sockets
     for {
         sockets, _ := poller.Poll(-1)

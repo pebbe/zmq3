@@ -41,7 +41,7 @@ func client_task(i int) {
 	monitor.Connect("ipc://" + self + "-monitor.ipc")
 
 	poller := zmq.NewPoller()
-	poller.Register(client, zmq.POLLIN)
+	poller.Add(client, zmq.POLLIN)
 	for {
 		time.Sleep(time.Duration(rand.Intn(5000)) * time.Millisecond)
 		for burst := rand.Intn(15); burst > 0; burst-- {
@@ -180,16 +180,16 @@ func main() {
 	workers := make([]string, 0)
 
 	primary := zmq.NewPoller()
-	primary.Register(localbe, zmq.POLLIN)
-	primary.Register(cloudbe, zmq.POLLIN)
-	primary.Register(statefe, zmq.POLLIN)
-	primary.Register(monitor, zmq.POLLIN)
+	primary.Add(localbe, zmq.POLLIN)
+	primary.Add(cloudbe, zmq.POLLIN)
+	primary.Add(statefe, zmq.POLLIN)
+	primary.Add(monitor, zmq.POLLIN)
 
 	secondary1 := zmq.NewPoller()
-	secondary1.Register(localfe, zmq.POLLIN)
+	secondary1.Add(localfe, zmq.POLLIN)
 	secondary2 := zmq.NewPoller()
-	secondary2.Register(localfe, zmq.POLLIN)
-	secondary2.Register(cloudfe, zmq.POLLIN)
+	secondary2.Add(localfe, zmq.POLLIN)
+	secondary2.Add(cloudfe, zmq.POLLIN)
 
 	msg := make([]string, 0)
 	for {

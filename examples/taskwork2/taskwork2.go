@@ -31,8 +31,8 @@ func main() {
 
 	//  Process messages from receiver and controller
 	poller := zmq.NewPoller()
-	poller.Register(receiver, zmq.POLLIN)
-	poller.Register(controller, zmq.POLLIN)
+	poller.Add(receiver, zmq.POLLIN)
+	poller.Add(controller, zmq.POLLIN)
 	//  Process messages from both sockets
 LOOP:
 	for {

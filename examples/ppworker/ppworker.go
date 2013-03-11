@@ -34,7 +34,7 @@ func s_worker_socket() (*zmq.Socket, *zmq.Poller) {
 	worker.Send(PPP_READY, 0)
 
 	poller := zmq.NewPoller()
-	poller.Register(worker, zmq.POLLIN)
+	poller.Add(worker, zmq.POLLIN)
 
 	return worker, poller
 }
