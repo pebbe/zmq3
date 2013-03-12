@@ -14,10 +14,18 @@ package zmq3
 
 char *get_event(zmq_msg_t *msg, int *ev, int *val) {
     zmq_event_t event;
+    char *s;
+    int n;
     memcpy(&event, zmq_msg_data(msg), sizeof(event));
     *ev = event.event;
     *val = event.data.connected.fd;
-    return strdup(event.data.connected.addr);
+    n = strlen(event.data.connected.addr);
+    s = (char *) malloc(n + 1);
+    if (s != NULL) {
+        memcpy(s, event.data.connected.addr, n);
+        s[n] = '\0';
+    }
+    return s;
 }
 
 void my_free (void *data, void *hint) {
