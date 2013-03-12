@@ -660,20 +660,65 @@ func (soc *Socket) RecvEvent(flags Flag) (event_type Event, addr string, value i
 }
 
 /*
-Start start built-in ØMQ proxy
+Start built-in ØMQ proxy
 
 See: http://api.zeromq.org/3-2:zmq-proxy
-
-Returns ErrorNotImplemented in 0MQ version 2.
 */
 func Proxy(frontend, backend, capture *Socket) error {
-	if major < 3 {
-		return ErrorNotImplemented
+
+	// For ZeroMQ version 3
+	if major >= 3 {
+		var capt unsafe.Pointer
+		if capture != nil {
+			capt = capture.soc
+		}
+		_, err := C.zmq_proxy(frontend.soc, backend.soc, capt)
+		return errget(err)
 	}
-	var capt unsafe.Pointer
-	if capture != nil {
-		capt = capture.soc
+
+	// For ZeroMQ version 2
+	items := NewPoller()
+	items.Add(frontend, POLLIN)
+	items.Add(backend, POLLIN)
+	for {
+		sockets, err := items.Poll(-1)
+		if err != nil {
+			return err
+		}
+		for socket := range sockets {
+			for more := true; more; {
+				msg, err := socket.RecvBytes(0)
+				if err != nil {
+					return err
+				}
+				more, err = socket.GetRcvmore()
+				if err != nil {
+					return err
+				}
+				fl := SNDMORE
+				if !more {
+					fl = 0
+				}
+
+				if capture != nil {
+					_, err = capture.SendBytes(msg, fl)
+					if err != nil {
+						return err
+					}
+				}
+
+				switch socket {
+				case frontend:
+					_, err = backend.SendBytes(msg, fl)
+				case backend:
+					_, err = frontend.SendBytes(msg, fl)
+				}
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
-	_, err := C.zmq_proxy(frontend.soc, backend.soc, capt)
-	return errget(err)
+
+	return nil
 }

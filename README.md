@@ -23,7 +23,6 @@ its functionality for version 3.
 
  * Things specific for version 2 are not implemented.
  * The following functions will return an error with ZeroMQ version 2:
-  * Proxy
   * GetMaxSockets
   * SetMaxSockets
   * (*Socket) Disconnect
