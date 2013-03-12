@@ -1,5 +1,6 @@
 #!/bin/sh
 
+goos=`go env GOOS`
 gobin=`go env GOBIN`
 if [ "$gobin" = "" ]
 then
@@ -25,6 +26,13 @@ for i in *
 do
     if [ -d $i ]
     then
+	if [ $i = interrupt ]
+	then
+	    if [ $goos = windows -o $goos = plan9 ]
+	    then
+		continue
+	    fi
+	fi
 	if [ ! -f $dir/$i -o $dir/$i -ot $i/$i.go ]
 	then
 	    dirs="$dirs $i"
