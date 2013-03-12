@@ -7,6 +7,7 @@ import (
 	zmq "github.com/pebbe/zmq3"
 
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -47,5 +48,6 @@ func main() {
 		go worker_routine()
 	}
 	//  Connect work threads to client threads via a queue proxy
-	zmq.Proxy(clients, workers, nil)
+	err := zmq.Proxy(clients, workers, nil)
+	log.Fatalln("Proxy interrupted:", err)
 }

@@ -10,6 +10,7 @@ import (
 	zmq "github.com/pebbe/zmq3"
 
 	"fmt"
+	"log"
 	"math/rand"
 	"sync"
 	"time"
@@ -76,7 +77,8 @@ func server_task() {
 	}
 
 	//  Connect backend to frontend via a proxy
-	zmq.Proxy(frontend, backend, nil)
+	err := zmq.Proxy(frontend, backend, nil)
+	log.Fatalln("Proxy interrupted:", err)
 }
 
 //  Each worker task works on one request at a time and sends a random number

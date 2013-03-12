@@ -7,6 +7,8 @@ package main
 
 import (
 	zmq "github.com/pebbe/zmq3"
+
+	"log"
 )
 
 func main() {
@@ -21,5 +23,6 @@ func main() {
 	backend.Bind("tcp://10.1.1.0:8100")
 
 	//  Run the proxy until the user interrupts us
-	zmq.Proxy(frontend, backend, nil)
+	err := zmq.Proxy(frontend, backend, nil)
+	log.Fatalln("Proxy interrupted:", err)
 }

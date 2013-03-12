@@ -1,4 +1,4 @@
-// A Go interface to ZeroMQ version 3.
+// A Go interface to ZeroMQ version 3, with limited support for ZeroMQ version 2.
 //
 // http://www.zeromq.org/
 package zmq3
@@ -8,11 +8,9 @@ package zmq3
 #cgo windows CFLAGS: -I/usr/local/include
 #cgo windows LDFLAGS: -L/usr/local/lib -lzmq
 #include <zmq.h>
+#include "zmq2.h"
 #include <stdlib.h>
 #include <string.h>
-#if ZMQ_VERSION_MAJOR < 3
-#error ZeroMQ is too old. Version 3 required.
-#endif
 
 char *get_event(zmq_msg_t *msg, int *ev, int *val) {
     zmq_event_t event;
@@ -21,6 +19,15 @@ char *get_event(zmq_msg_t *msg, int *ev, int *val) {
     *val = event.data.connected.fd;
     return strdup(event.data.connected.addr);
 }
+
+void my_free (void *data, void *hint) {
+    free (data);
+}
+
+int my_msg_init_data (zmq_msg_t *msg, void *data, size_t size) {
+    return zmq_msg_init_data (msg, data, size, my_free, NULL);
+}
+
 */
 import "C"
 
@@ -33,12 +40,26 @@ import (
 )
 
 var (
-	ctx unsafe.Pointer
+	ErrorNotImplemented = errors.New("Not implemented, requires 0MQ version 3")
+)
+
+var (
+	ctx           unsafe.Pointer
+	nr_of_threads int
+	major         int
 )
 
 func init() {
 	var err error
-	ctx, err = C.zmq_ctx_new()
+
+	major, _, _ = Version()
+
+	if major < 3 {
+		nr_of_threads = 1
+		ctx, err = C.zmq_init(C.int(nr_of_threads))
+	} else {
+		ctx, err = C.zmq_ctx_new()
+	}
 	if ctx == nil {
 		panic("Init of ZeroMQ context failed: " + errget(err).Error())
 	}
@@ -79,11 +100,19 @@ func getOption(o C.int) (int, error) {
 
 // Returns the size of the 0MQ thread pool.
 func GetIoThreads() (int, error) {
+	if major < 3 {
+		return nr_of_threads, nil
+	}
 	return getOption(C.ZMQ_IO_THREADS)
 }
 
 // Returns the maximum number of sockets allowed.
+//
+// Returns ErrorNotImplemented in 0MQ version 2.
 func GetMaxSockets() (int, error) {
+	if major < 3 {
+		return -1, ErrorNotImplemented
+	}
 	return getOption(C.ZMQ_MAX_SOCKETS)
 }
 
@@ -102,8 +131,21 @@ may set this to zero, otherwise set it to at least one. This option only
 applies before creating any sockets.
 
 Default value   1
+
+With 0MQ version 2, this creates a new context without closing the old one.
 */
 func SetIoThreads(n int) error {
+	if major < 3 {
+		if n != nr_of_threads {
+			c, err := C.zmq_init(C.int(n))
+			if c == nil {
+				return errget(err)
+			}
+			nr_of_threads = n
+			ctx = c
+			return nil
+		}
+	}
 	return setOption(C.ZMQ_IO_THREADS, n)
 }
 
@@ -111,8 +153,13 @@ func SetIoThreads(n int) error {
 Sets the maximum number of sockets allowed.
 
 Default value   1024
+
+Returns ErrorNotImplemented in 0MQ version 2.
 */
 func SetMaxSockets(n int) error {
+	if major < 3 {
+		return ErrorNotImplemented
+	}
 	return setOption(C.ZMQ_MAX_SOCKETS, n)
 }
 
@@ -219,7 +266,7 @@ const (
 Socket event as string.
 */
 func (e Event) String() string {
-	if e == EVENT_ALL {
+	if e != 0 && e == EVENT_ALL {
 		return "EVENT_ALL"
 	}
 	ee := make([]string, 0)
@@ -378,8 +425,13 @@ func (soc *Socket) Connect(endpoint string) error {
 Disconnect a socket.
 
 For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-connect#toc2
+
+Returns ErrorNotImplemented in 0MQ version 2.
 */
 func (soc *Socket) Disconnect(endpoint string) error {
+	if major < 3 {
+		return ErrorNotImplemented
+	}
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
 	if i, err := C.zmq_disconnect(soc.soc, s); int(i) != 0 {
@@ -410,7 +462,20 @@ func (soc *Socket) RecvBytes(flags Flag) ([]byte, error) {
 	}
 	defer C.zmq_msg_close(&msg)
 
-	size, err := C.zmq_msg_recv(&msg, soc.soc, C.int(flags))
+	var size C.int
+	var err error
+
+	if major < 3 {
+		var i C.int
+		i, err = C.zmq2_recv(soc.soc, &msg, C.int(flags))
+		if i == 0 {
+			size = C.int(C.zmq_msg_size(&msg))
+		} else {
+			size = -1
+		}
+	} else {
+		size, err = C.zmq_msg_recv(&msg, soc.soc, C.int(flags))
+	}
 	if size < 0 {
 		return []byte{}, errget(err)
 	}
@@ -437,11 +502,27 @@ Send a message part on a socket.
 For a description of flags, see: http://api.zeromq.org/3-2:zmq-send#toc2
 */
 func (soc *Socket) SendBytes(data []byte, flags Flag) (int, error) {
+
+	if major < 3 {
+		datac := C.CString(string(data))
+		var msg C.zmq_msg_t
+		if i, err := C.my_msg_init_data(&msg, unsafe.Pointer(datac), C.size_t(len(data))); i != 0 {
+			return -1, errget(err)
+		}
+		defer C.zmq_msg_close(&msg)
+		n, err := C.zmq2_send(soc.soc, &msg, C.int(flags))
+		if n != 0 {
+			return -1, errget(err)
+		}
+		return int(n), nil
+	}
+
 	d := data
 	if len(data) == 0 {
 		d = []byte{0}
 	}
-	size, err := C.zmq_send(soc.soc, unsafe.Pointer(&d[0]), C.size_t(len(data)), C.int(flags))
+
+	size, err := C.zmq3_send(soc.soc, unsafe.Pointer(&d[0]), C.size_t(len(data)), C.int(flags))
 	if size < 0 {
 		return int(size), errget(err)
 	}
@@ -450,6 +531,8 @@ func (soc *Socket) SendBytes(data []byte, flags Flag) (int, error) {
 
 /*
 Register a monitoring callback.
+
+Returns ErrorNotImplemented in 0MQ version 2.
 
 See: http://api.zeromq.org/3-2:zmq-socket-monitor#toc2
 
@@ -509,6 +592,9 @@ Example:
     }
 */
 func (soc *Socket) Monitor(addr string, events Event) error {
+	if major < 3 {
+		return ErrorNotImplemented
+	}
 	s := C.CString(addr)
 	defer C.free(unsafe.Pointer(s))
 	if i, err := C.zmq_socket_monitor(soc.soc, s, C.int(events)); i != 0 {
@@ -525,8 +611,15 @@ For a description of flags, see: http://api.zeromq.org/3-2:zmq-msg-recv#toc2
 For a description of event_type, see: http://api.zeromq.org/3-2:zmq-socket-monitor#toc2
 
 For an example, see: func (*Socket) Monitor
+
+Returns ErrorNotImplemented in 0MQ version 2.
 */
 func (soc *Socket) RecvEvent(flags Flag) (event_type Event, addr string, value int, err error) {
+	if major < 3 {
+		err = ErrorNotImplemented
+		return
+	}
+
 	var msg C.zmq_msg_t
 	if i, e := C.zmq_msg_init(&msg); i != 0 {
 		err = errget(e)
@@ -562,8 +655,13 @@ func (soc *Socket) RecvEvent(flags Flag) (event_type Event, addr string, value i
 Start start built-in ØMQ proxy
 
 See: http://api.zeromq.org/3-2:zmq-proxy
+
+Returns ErrorNotImplemented in 0MQ version 2.
 */
 func Proxy(frontend, backend, capture *Socket) error {
+	if major < 3 {
+		return ErrorNotImplemented
+	}
 	var capt unsafe.Pointer
 	if capture != nil {
 		capt = capture.soc
