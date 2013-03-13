@@ -84,10 +84,10 @@ func errget(err error) error {
 }
 
 // Report 0MQ library version.
-func Version() (int, int, int) {
-	var major, minor, patch C.int
-	C.zmq_version(&major, &minor, &patch)
-	return int(major), int(minor), int(patch)
+func Version() (major, minor, patch int) {
+	var maj, min, pat C.int
+	C.zmq_version(&maj, &min, &pat)
+	return int(maj), int(min), int(pat)
 }
 
 // Get 0MQ error message string.
