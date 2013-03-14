@@ -2,7 +2,6 @@ package zmq3
 
 /*
 #include <zmq.h>
-#include "zmq2.h"
 #include <stdint.h>
 #include <stdlib.h>
 */
@@ -49,24 +48,14 @@ func (soc *Socket) setUInt64(opt C.int, value uint64) error {
 // ZMQ_SNDHWM: Set high water mark for outbound messages
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc3
-//
-// In 0MQ version 2, sets high water mark for both inbound and outbound messages
 func (soc *Socket) SetSndhwm(value int) error {
-	if major < 3 {
-		return soc.setUInt64(C.ZMQ_SNDHWM, uint64(value))
-	}
 	return soc.setInt(C.ZMQ_SNDHWM, value)
 }
 
 // ZMQ_RCVHWM: Set high water mark for inbound messages
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc4
-//
-// In 0MQ version 2, sets high water mark for both inbound and outbound messages
 func (soc *Socket) SetRcvhwm(value int) error {
-	if major < 3 {
-		return soc.setUInt64(C.ZMQ_RCVHWM, uint64(value))
-	}
 	return soc.setInt(C.ZMQ_RCVHWM, value)
 }
 
@@ -102,9 +91,6 @@ func (soc *Socket) SetIdentity(value string) error {
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc9
 func (soc *Socket) SetRate(value int) error {
-	if major < 3 {
-		return soc.setInt64(C.ZMQ_RATE, int64(value))
-	}
 	return soc.setInt(C.ZMQ_RATE, value)
 }
 
@@ -112,10 +98,6 @@ func (soc *Socket) SetRate(value int) error {
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc10
 func (soc *Socket) SetRecoveryIvl(value time.Duration) error {
-	if major < 3 {
-		val := int64(value / time.Millisecond)
-		return soc.setInt64(C.ZMQ_RECOVERY_IVL_MSEC, val)
-	}
 	val := int(value / time.Millisecond)
 	return soc.setInt(C.ZMQ_RECOVERY_IVL, val)
 }
@@ -124,9 +106,6 @@ func (soc *Socket) SetRecoveryIvl(value time.Duration) error {
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc11
 func (soc *Socket) SetSndbuf(value int) error {
-	if major < 3 {
-		return soc.setUInt64(C.ZMQ_SNDBUF, uint64(value))
-	}
 	return soc.setInt(C.ZMQ_SNDBUF, value)
 }
 
@@ -134,9 +113,6 @@ func (soc *Socket) SetSndbuf(value int) error {
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc12
 func (soc *Socket) SetRcvbuf(value int) error {
-	if major < 3 {
-		return soc.setUInt64(C.ZMQ_RCVBUF, uint64(value))
-	}
 	return soc.setInt(C.ZMQ_RCVBUF, value)
 }
 
@@ -184,24 +160,14 @@ func (soc *Socket) SetBacklog(value int) error {
 // ZMQ_MAXMSGSIZE: Maximum acceptable inbound message size
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc17
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetMaxmsgsize(value int64) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	return soc.setInt64(C.ZMQ_MAXMSGSIZE, value)
 }
 
 // ZMQ_MULTICAST_HOPS: Maximum network hops for multicast packets
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc18
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetMulticastHops(value int) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	return soc.setInt(C.ZMQ_MULTICAST_HOPS, value)
 }
 
@@ -234,12 +200,7 @@ func (soc *Socket) SetSndtimeo(value time.Duration) error {
 // ZMQ_IPV4ONLY: Use IPv4-only sockets
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc21
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetIpv4only(value bool) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	val := 0
 	if value {
 		val = 1
@@ -250,12 +211,7 @@ func (soc *Socket) SetIpv4only(value bool) error {
 // ZMQ_DELAY_ATTACH_ON_CONNECT: Accept messages only when connections are made
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc22
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetDelayAttachOnConnect(value bool) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	val := int(0)
 	if value {
 		val = 1
@@ -266,83 +222,48 @@ func (soc *Socket) SetDelayAttachOnConnect(value bool) error {
 // ZMQ_ROUTER_MANDATORY: accept only routable messages on ROUTER sockets
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc23
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetRouterMandatory(value int) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	return soc.setInt(C.ZMQ_ROUTER_MANDATORY, value)
 }
 
 // ZMQ_XPUB_VERBOSE: provide all subscription messages on XPUB sockets
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc24
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetXpubVerbose(value int) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	return soc.setInt(C.ZMQ_XPUB_VERBOSE, value)
 }
 
 // ZMQ_TCP_KEEPALIVE: Override SO_KEEPALIVE socket option
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc25
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetTcpKeepalive(value int) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	return soc.setInt(C.ZMQ_TCP_KEEPALIVE, value)
 }
 
 // ZMQ_TCP_KEEPALIVE_IDLE: Override TCP_KEEPCNT(or TCP_KEEPALIVE on some OS)
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc26
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetTcpKeepaliveIdle(value int) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	return soc.setInt(C.ZMQ_TCP_KEEPALIVE_IDLE, value)
 }
 
 // ZMQ_TCP_KEEPALIVE_CNT: ZMQ_TCP_KEEPALIVE_CNT: Override TCP_KEEPCNT socket option
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc27
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetTcpKeepaliveCnt(value int) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	return soc.setInt(C.ZMQ_TCP_KEEPALIVE_CNT, value)
 }
 
 // ZMQ_TCP_KEEPALIVE_INTVL: Override TCP_KEEPINTVL socket option
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc28
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetTcpKeepaliveIntvl(value int) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	return soc.setInt(C.ZMQ_TCP_KEEPALIVE_INTVL, value)
 }
 
 // ZMQ_TCP_ACCEPT_FILTER: Assign filters to allow new TCP connections
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc29
-//
-// Returns ErrorNotImplemented in 0MQ version 2
 func (soc *Socket) SetTcpAcceptFilter(filter string) error {
-	if major < 3 {
-		return ErrorNotImplemented
-	}
 	return soc.setString(C.ZMQ_TCP_ACCEPT_FILTER, filter)
 }

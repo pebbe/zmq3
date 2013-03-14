@@ -13,7 +13,7 @@ then
     gobin=$gobin/bin
 fi
 
-dir=$gobin/zmq-examples
+dir=$gobin/zmq3-examples
 
 echo Installing examples in $dir
 

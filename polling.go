@@ -66,11 +66,7 @@ func (p *Poller) Poll(timeout time.Duration) (map[*Socket]State, error) {
 	mp := make(map[*Socket]State)
 	t := timeout
 	if t > 0 {
-		if major < 3 {
-			t = t / time.Microsecond
-		} else {
-			t = t / time.Millisecond
-		}
+		t = t / time.Millisecond
 	}
 	if t < 0 {
 		t = -1

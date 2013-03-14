@@ -2,7 +2,6 @@ package zmq3
 
 /*
 #include <zmq.h>
-#include "zmq2.h"
 #include <stdint.h>
 */
 import "C"
@@ -48,15 +47,6 @@ func (soc *Socket) getUInt64(opt C.int) (uint64, error) {
 	return uint64(value), nil
 }
 
-func (soc *Socket) getUInt32(opt C.int) (uint32, error) {
-	value := C.uint32_t(0)
-	size := C.size_t(unsafe.Sizeof(value))
-	if i, err := C.zmq_getsockopt(soc.soc, opt, unsafe.Pointer(&value), &size); i != 0 {
-		return 0, errget(err)
-	}
-	return uint32(value), nil
-}
-
 // ZMQ_TYPE: Retrieve socket type
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc3
@@ -69,10 +59,6 @@ func (soc *Socket) GetType() (Type, error) {
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc4
 func (soc *Socket) GetRcvmore() (bool, error) {
-	if major < 3 {
-		v, err := soc.getInt64(C.ZMQ_RCVMORE)
-		return v != 0, err
-	}
 	v, err := soc.getInt(C.ZMQ_RCVMORE)
 	return v != 0, err
 }
@@ -80,26 +66,14 @@ func (soc *Socket) GetRcvmore() (bool, error) {
 // ZMQ_SNDHWM: Retrieves high water mark for outbound messages
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc5
-//
-// In 0MQ version 2, returns common value for both inbound and outbound messages
 func (soc *Socket) GetSndhwm() (int, error) {
-	if major < 3 {
-		i, e := soc.getUInt64(C.ZMQ_SNDHWM)
-		return int(i), e
-	}
 	return soc.getInt(C.ZMQ_SNDHWM)
 }
 
 // ZMQ_RCVHWM: Retrieve high water mark for inbound messages
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc6
-//
-// In 0MQ version 2, returns common value for both inbound and outbound messages
 func (soc *Socket) GetRcvhwm() (int, error) {
-	if major < 3 {
-		i, e := soc.getUInt64(C.ZMQ_RCVHWM)
-		return int(i), e
-	}
 	return soc.getInt(C.ZMQ_RCVHWM)
 }
 
@@ -121,10 +95,6 @@ func (soc *Socket) GetIdentity() (string, error) {
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc9
 func (soc *Socket) GetRate() (int, error) {
-	if major < 3 {
-		i, e := soc.getInt64(C.ZMQ_RATE)
-		return int(i), e
-	}
 	return soc.getInt(C.ZMQ_RATE)
 }
 
@@ -132,14 +102,6 @@ func (soc *Socket) GetRate() (int, error) {
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc10
 func (soc *Socket) GetRecoveryIvl() (time.Duration, error) {
-	if major < 3 {
-		v, e := soc.getInt64(C.ZMQ_RECOVERY_IVL_MSEC)
-		if v >= 0 {
-			return time.Duration(v) * time.Millisecond, e
-		}
-		v, e = soc.getInt64(C.ZMQ_RECOVERY_IVL)
-		return time.Duration(v) * time.Second, e
-	}
 	v, err := soc.getInt(C.ZMQ_RECOVERY_IVL)
 	return time.Duration(v) * time.Millisecond, err
 }
@@ -148,10 +110,6 @@ func (soc *Socket) GetRecoveryIvl() (time.Duration, error) {
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc11
 func (soc *Socket) GetSndbuf() (int, error) {
-	if major < 3 {
-		i, e := soc.getUInt64(C.ZMQ_SNDBUF)
-		return int(i), e
-	}
 	return soc.getInt(C.ZMQ_SNDBUF)
 }
 
@@ -159,10 +117,6 @@ func (soc *Socket) GetSndbuf() (int, error) {
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc12
 func (soc *Socket) GetRcvbuf() (int, error) {
-	if major < 3 {
-		i, e := soc.getUInt64(C.ZMQ_RCVBUF)
-		return int(i), e
-	}
 	return soc.getInt(C.ZMQ_RCVBUF)
 }
 
@@ -210,24 +164,14 @@ func (soc *Socket) GetBacklog() (int, error) {
 // ZMQ_MAXMSGSIZE: Maximum acceptable inbound message size
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc17
-//
-// Returns ErrorNotImplemented in 0MQ version 2.
 func (soc *Socket) GetMaxmsgsize() (int64, error) {
-	if major < 3 {
-		return -1, ErrorNotImplemented
-	}
 	return soc.getInt64(C.ZMQ_MAXMSGSIZE)
 }
 
 // ZMQ_MULTICAST_HOPS: Maximum network hops for multicast packets
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc18
-//
-// Returns ErrorNotImplemented in 0MQ version 2.
 func (soc *Socket) GetMulticastHops() (int, error) {
-	if major < 3 {
-		return -1, ErrorNotImplemented
-	}
 	return soc.getInt(C.ZMQ_MULTICAST_HOPS)
 }
 
@@ -260,12 +204,7 @@ func (soc *Socket) GetSndtimeo() (time.Duration, error) {
 // ZMQ_IPV4ONLY: Retrieve IPv4-only socket override status
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc21
-//
-// Returns ErrorNotImplemented in 0MQ version 2.
 func (soc *Socket) GetIpv4only() (bool, error) {
-	if major < 3 {
-		return false, ErrorNotImplemented
-	}
 	v, err := soc.getInt(C.ZMQ_IPV4ONLY)
 	return v != 0, err
 }
@@ -273,12 +212,7 @@ func (soc *Socket) GetIpv4only() (bool, error) {
 // ZMQ_DELAY_ATTACH_ON_CONNECT: Retrieve attach-on-connect value
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc22
-//
-// Returns ErrorNotImplemented in 0MQ version 2.
 func (soc *Socket) GetDelayAttachOnConnect() (bool, error) {
-	if major < 3 {
-		return false, ErrorNotImplemented
-	}
 	v, err := soc.getInt(C.ZMQ_DELAY_ATTACH_ON_CONNECT)
 	return v != 0, err
 }
@@ -290,70 +224,41 @@ func (soc *Socket) GetDelayAttachOnConnect() (bool, error) {
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc24
 func (soc *Socket) GetEvents() (State, error) {
-	if major < 3 {
-		v, err := soc.getUInt32(C.ZMQ_EVENTS)
-		return State(v), err
-	}
-	v, err := soc.getInt(C.ZMQ_EVENTS)
+	v, err :=  soc.getInt(C.ZMQ_EVENTS)
 	return State(v), err
 }
 
 // ZMQ_LAST_ENDPOINT: Retrieve the last endpoint set
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc25
-//
-// Returns ErrorNotImplemented in 0MQ version 2.
 func (soc *Socket) GetLastEndpoint() (string, error) {
-	if major < 3 {
-		return "", ErrorNotImplemented
-	}
 	return soc.getString(C.ZMQ_LAST_ENDPOINT, 1024)
 }
 
 // ZMQ_TCP_KEEPALIVE: Override SO_KEEPALIVE socket option
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc26
-//
-// Returns ErrorNotImplemented in 0MQ version 2.
 func (soc *Socket) GetTcpKeepalive() (int, error) {
-	if major < 3 {
-		return -1, ErrorNotImplemented
-	}
 	return soc.getInt(C.ZMQ_TCP_KEEPALIVE)
 }
 
 // ZMQ_TCP_KEEPALIVE_IDLE: Override TCP_KEEPCNT(or TCP_KEEPALIVE on some OS)
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc27
-//
-// Returns ErrorNotImplemented in 0MQ version 2.
 func (soc *Socket) GetTcpKeepaliveIdle() (int, error) {
-	if major < 3 {
-		return -1, ErrorNotImplemented
-	}
 	return soc.getInt(C.ZMQ_TCP_KEEPALIVE_IDLE)
 }
 
 // ZMQ_TCP_KEEPALIVE_CNT: Override TCP_KEEPCNT socket option
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc28
-//
-// Returns ErrorNotImplemented in 0MQ version 2.
 func (soc *Socket) GetTcpKeepaliveCnt() (int, error) {
-	if major < 3 {
-		return -1, ErrorNotImplemented
-	}
 	return soc.getInt(C.ZMQ_TCP_KEEPALIVE_CNT)
 }
 
 // ZMQ_TCP_KEEPALIVE_INTVL: Override TCP_KEEPINTVL socket option
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc29
-//
-// Returns ErrorNotImplemented in 0MQ version 2.
 func (soc *Socket) GetTcpKeepaliveIntvl() (int, error) {
-	if major < 3 {
-		return -1, ErrorNotImplemented
-	}
 	return soc.getInt(C.ZMQ_TCP_KEEPALIVE_INTVL)
 }
