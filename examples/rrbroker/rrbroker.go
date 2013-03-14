@@ -24,8 +24,8 @@ func main() {
 	//  Switch messages between sockets
 	for {
 		sockets, _ := poller.Poll(-1)
-		for socket := range sockets {
-			switch socket {
+		for _, socket := range sockets {
+			switch socket.Soc {
 			case frontend:
 				for {
 					msg, _ := frontend.Recv(0)

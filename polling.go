@@ -10,16 +10,24 @@ import (
 	"time"
 )
 
+// Return type for (*Poller)Poll
+type Polled struct {
+	Soc  *Socket // socket with matched state(s)
+	Flag State   // actual matched state(s)
+}
+
 type Poller struct {
 	items []C.zmq_pollitem_t
 	socks []*Socket
+	size  int
 }
 
 // Create a new Poller
 func NewPoller() *Poller {
 	return &Poller{
 		items: make([]C.zmq_pollitem_t, 0),
-		socks: make([]*Socket, 0)}
+		socks: make([]*Socket, 0),
+		size:  0}
 }
 
 // Add items to the poller
@@ -32,6 +40,7 @@ func (p *Poller) Add(soc *Socket, events State) {
 	item.events = C.short(events)
 	p.items = append(p.items, item)
 	p.socks = append(p.socks, soc)
+	p.size += 1
 }
 
 /*
@@ -50,8 +59,8 @@ Example:
     //  Process messages from both sockets
     for {
         sockets, _ := poller.Poll(-1)
-        for socket := range sockets {
-            switch socket {
+        for _, socket := range sockets {
+            switch socket.Soc {
             case socket0:
                 msg, _ := socket0.Recv(0)
                 //  Process msg
@@ -62,8 +71,8 @@ Example:
         }
     }
 */
-func (p *Poller) Poll(timeout time.Duration) (map[*Socket]State, error) {
-	mp := make(map[*Socket]State)
+func (p *Poller) Poll(timeout time.Duration) ([]Polled, error) {
+	lst := make([]Polled, 0, p.size)
 	t := timeout
 	if t > 0 {
 		t = t / time.Millisecond
@@ -73,14 +82,14 @@ func (p *Poller) Poll(timeout time.Duration) (map[*Socket]State, error) {
 	}
 	rv, err := C.zmq_poll(&p.items[0], C.int(len(p.items)), C.long(t))
 	if rv < 0 {
-		return mp, errget(err)
+		return lst, errget(err)
 	}
 	for i, it := range p.items {
 		if it.events&it.revents != 0 {
-			mp[p.socks[i]] = State(it.revents)
+			lst = append(lst, Polled{p.socks[i], State(it.revents)})
 		}
 	}
-	return mp, nil
+	return lst, nil
 }
 
 // Poller as string.

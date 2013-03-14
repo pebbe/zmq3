@@ -53,7 +53,7 @@ func main() {
 		}
 
 		//  Handle incoming status messages
-		if _, ok := sockets[statefe]; ok {
+		if len(sockets) == 1 {
 			msg, _ := statefe.RecvMessage(0)
 			peer_name := msg[0]
 			available := msg[1]

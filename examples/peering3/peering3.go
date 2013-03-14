@@ -56,7 +56,7 @@ func client_task(i int) {
 				break //  Interrupted
 			}
 
-			if _, ok := sockets[client]; ok {
+			if len(sockets) == 1 {
 				reply, err := client.Recv(0)
 				if err != nil {
 					break //  Interrupted
@@ -210,7 +210,7 @@ func main() {
 		//  Handle reply from local worker
 		msg = msg[0:0]
 
-		if _, ok := sockets[localbe]; ok {
+		if socketInPolled(localbe, sockets) {
 			msg, err = localbe.RecvMessage(0)
 			if err != nil {
 				break //  Interrupted
@@ -224,7 +224,7 @@ func main() {
 			if msg[0] == WORKER_READY {
 				msg = msg[0:0]
 			}
-		} else if _, ok := sockets[cloudbe]; ok {
+		} else if socketInPolled(cloudbe, sockets) {
 			//  Or handle reply from peer broker
 			msg, err = cloudbe.RecvMessage(0)
 			if err != nil {
@@ -254,14 +254,14 @@ func main() {
 		//  If we have input messages on our statefe or monitor sockets we
 		//  can process these immediately:
 
-		if _, ok := sockets[statefe]; ok {
+		if socketInPolled(statefe, sockets) {
 			var status string
 			m, _ := statefe.RecvMessage(0)
 			_, m = unwrap(m) // peer
 			status, _ = unwrap(m)
 			cloud_capacity, _ = strconv.Atoi(status)
 		}
-		if _, ok := sockets[monitor]; ok {
+		if socketInPolled(monitor, sockets) {
 			status, _ := monitor.Recv(0)
 			fmt.Println(status)
 		}
@@ -271,7 +271,7 @@ func main() {
 		//  if we can, else we route to the cloud.
 
 		for local_capacity+cloud_capacity > 0 {
-			var sockets map[*zmq.Socket]zmq.State
+			var sockets []zmq.Polled
 			var err error
 			if local_capacity > 0 {
 				sockets, err = secondary2.Poll(0)
@@ -282,9 +282,9 @@ func main() {
 				panic(err)
 			}
 
-			if _, ok := sockets[localfe]; ok {
+			if socketInPolled(localfe, sockets) {
 				msg, _ = localfe.RecvMessage(0)
-			} else if _, ok := sockets[cloudfe]; ok {
+			} else if socketInPolled(cloudfe, sockets) {
 				msg, _ = cloudfe.RecvMessage(0)
 			} else {
 				break //  No work, go back to primary
@@ -322,4 +322,14 @@ func unwrap(msg []string) (head string, tail []string) {
 		tail = msg[1:]
 	}
 	return
+}
+
+// Returns true if *Socket is in []Polled
+func socketInPolled(s *zmq.Socket, p []zmq.Polled) bool {
+	for _, pp := range p {
+		if pp.Soc == s {
+			return true
+		}
+	}
+	return false
 }

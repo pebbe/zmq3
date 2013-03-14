@@ -111,14 +111,14 @@ func main() {
 
 	for client_nbr > 0 {
 		//  Poll frontend only if we have available workers
-		var sockets map[*zmq.Socket]zmq.State
+		var sockets []zmq.Polled
 		if len(worker_queue) > 0 {
 			sockets, _ = poller2.Poll(-1)
 		} else {
 			sockets, _ = poller1.Poll(-1)
 		}
-		for socket := range sockets {
-			switch socket {
+		for _, socket := range sockets {
+			switch socket.Soc {
 			case backend:
 
 				//  Handle worker activity on backend

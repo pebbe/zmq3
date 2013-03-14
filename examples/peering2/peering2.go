@@ -163,7 +163,7 @@ func main() {
 		}
 
 		msg = msg[:]
-		if _, ok := sockets[localbe]; ok {
+		if socketInPolled(localbe, sockets) {
 			//  Handle reply from local worker
 			msg, err = localbe.RecvMessage(0)
 			if err != nil {
@@ -178,7 +178,7 @@ func main() {
 			if msg[0] == WORKER_READY {
 				msg = msg[0:0]
 			}
-		} else if _, ok := sockets[cloudbe]; ok {
+		} else if socketInPolled(cloudbe, sockets) {
 			//  Or handle reply from peer broker
 			msg, err = cloudbe.RecvMessage(0)
 			if err != nil {
@@ -213,10 +213,10 @@ func main() {
 			}
 			var reroutable bool
 			//  We'll do peer brokers first, to prevent starvation
-			if _, ok := sockets[cloudfe]; ok {
+			if socketInPolled(cloudfe, sockets) {
 				msg, _ = cloudfe.RecvMessage(0)
 				reroutable = false
-			} else if _, ok := sockets[localfe]; ok {
+			} else if socketInPolled(localfe, sockets) {
 				msg, _ = localfe.RecvMessage(0)
 				reroutable = true
 			} else {
@@ -250,4 +250,14 @@ func unwrap(msg []string) (head string, tail []string) {
 		tail = msg[1:]
 	}
 	return
+}
+
+// Returns true if *Socket is in []Polled
+func socketInPolled(s *zmq.Socket, p []zmq.Polled) bool {
+	for _, pp := range p {
+		if pp.Soc == s {
+			return true
+		}
+	}
+	return false
 }

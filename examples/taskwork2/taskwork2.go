@@ -37,8 +37,8 @@ func main() {
 LOOP:
 	for {
 		sockets, _ := poller.Poll(-1)
-		for socket := range sockets {
-			switch socket {
+		for _, socket := range sockets {
+			switch socket.Soc {
 			case receiver:
 				msg, _ := receiver.Recv(0)
 

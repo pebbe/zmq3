@@ -92,7 +92,7 @@ func main() {
 
 	for {
 		//  Poll frontend only if we have available workers
-		var sockets map[*zmq.Socket]zmq.State
+		var sockets []zmq.Polled
 		var err error
 		if len(workers) > 0 {
 			sockets, err = poller2.Poll(HEARTBEAT_INTERVAL)
@@ -103,8 +103,8 @@ func main() {
 			break //  Interrupted
 		}
 
-		for socket := range sockets {
-			switch socket {
+		for _, socket := range sockets {
+			switch socket.Soc {
 			case backend:
 				//  Handle worker activity on backend
 				//  Use worker identity for load-balancing
