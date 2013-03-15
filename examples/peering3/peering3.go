@@ -327,7 +327,7 @@ func unwrap(msg []string) (head string, tail []string) {
 // Returns true if *Socket is in []Polled
 func socketInPolled(s *zmq.Socket, p []zmq.Polled) bool {
 	for _, pp := range p {
-		if pp.Soc == s {
+		if pp.Socket == s {
 			return true
 		}
 	}

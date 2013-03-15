@@ -134,7 +134,7 @@ LOOP:
 			break //  Interrupted
 		}
 		for _, socket := range sockets {
-			if err := handlers[socket.Soc](); err != nil {
+			if err := handlers[socket.Socket](); err != nil {
 				break LOOP
 			}
 		}

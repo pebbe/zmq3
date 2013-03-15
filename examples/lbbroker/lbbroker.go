@@ -118,7 +118,7 @@ func main() {
 			sockets, _ = poller1.Poll(-1)
 		}
 		for _, socket := range sockets {
-			switch socket.Soc {
+			switch socket.Socket {
 			case backend:
 
 				//  Handle worker activity on backend

@@ -45,10 +45,10 @@ LOOP:
 			break //  Interrupted
 		}
 		for _, socket := range sockets {
-			switch socket.Soc {
+			switch s := socket.Socket; s {
 			case backend: //  Handle worker activity on backend
 				//  Use worker identity for load-balancing
-				msg, err := backend.RecvMessage(0)
+				msg, err := s.RecvMessage(0)
 				if err != nil {
 					break LOOP //  Interrupted
 				}
@@ -63,7 +63,7 @@ LOOP:
 
 			case frontend:
 				//  Get client request, route to first available worker
-				msg, err := frontend.RecvMessage(0)
+				msg, err := s.RecvMessage(0)
 				if err == nil {
 					backend.SendMessage(workers[0], "", msg)
 					workers = workers[1:]

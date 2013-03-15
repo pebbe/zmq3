@@ -12,8 +12,8 @@ import (
 
 // Return type for (*Poller)Poll
 type Polled struct {
-	Soc  *Socket // socket with matched state(s)
-	Flag State   // actual matched state(s)
+	Socket *Socket // socket with matched event(s)
+	Events State   // actual matched event(s)
 }
 
 type Poller struct {
@@ -48,8 +48,7 @@ Input/output multiplexing
 
 If timeout < 0, wait forever until a matching event is detected
 
-Only sockets with matching socket states are returned in the map.
-The values in the map are the actual sockets states.
+Only sockets with matching socket events are returned in the list.
 
 Example:
 
@@ -60,12 +59,12 @@ Example:
     for {
         sockets, _ := poller.Poll(-1)
         for _, socket := range sockets {
-            switch socket.Soc {
+            switch s := socket.Socket; s {
             case socket0:
-                msg, _ := socket0.Recv(0)
+                msg, _ := s.Recv(0)
                 //  Process msg
             case socket1:
-                msg, _ := socket1.Recv(0)
+                msg, _ := s.Recv(0)
                 //  Process msg
             }
         }

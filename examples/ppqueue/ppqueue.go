@@ -104,7 +104,7 @@ func main() {
 		}
 
 		for _, socket := range sockets {
-			switch socket.Soc {
+			switch socket.Socket {
 			case backend:
 				//  Handle worker activity on backend
 				//  Use worker identity for load-balancing

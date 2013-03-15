@@ -38,9 +38,9 @@ LOOP:
 	for {
 		sockets, _ := poller.Poll(-1)
 		for _, socket := range sockets {
-			switch socket.Soc {
+			switch s := socket.Socket; s {
 			case receiver:
-				msg, _ := receiver.Recv(0)
+				msg, _ := s.Recv(0)
 
 				//  Do the work
 				t, _ := strconv.Atoi(msg)

@@ -25,11 +25,11 @@ func main() {
 	for {
 		sockets, _ := poller.Poll(-1)
 		for _, socket := range sockets {
-			switch socket.Soc {
+			switch s := socket.Socket; s {
 			case frontend:
 				for {
-					msg, _ := frontend.Recv(0)
-					if more, _ := frontend.GetRcvmore(); more {
+					msg, _ := s.Recv(0)
+					if more, _ := s.GetRcvmore(); more {
 						backend.Send(msg, zmq.SNDMORE)
 					} else {
 						backend.Send(msg, 0)
@@ -38,8 +38,8 @@ func main() {
 				}
 			case backend:
 				for {
-					msg, _ := backend.Recv(0)
-					if more, _ := backend.GetRcvmore(); more {
+					msg, _ := s.Recv(0)
+					if more, _ := s.GetRcvmore(); more {
 						frontend.Send(msg, zmq.SNDMORE)
 					} else {
 						frontend.Send(msg, 0)
