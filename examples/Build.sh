@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd `dirname $0`
+
 goos=`go env GOOS`
 gobin=`go env GOBIN`
 if [ "$gobin" = "" ]
