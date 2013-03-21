@@ -1,5 +1,7 @@
 #!/bin/sh
 
+go install github.com/pebbe/zmq3/examples/mdapi
+
 cd `dirname $0`
 
 goos=`go env GOOS`
@@ -34,6 +36,10 @@ do
 	    then
 		continue
 	    fi
+	fi
+	if [ $i = mdapi ]
+	then
+	    continue
 	fi
 	if [ ! -f $dir/$i -o $dir/$i -ot $i/$i.go ]
 	then
