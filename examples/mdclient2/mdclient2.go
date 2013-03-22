@@ -9,6 +9,7 @@ import (
 	"github.com/pebbe/zmq3/examples/mdapi"
 
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -19,15 +20,20 @@ func main() {
 	}
 	session, _ := mdapi.NewMdcli2("tcp://localhost:5555", verbose)
 
-    var count int
-    for count = 0; count < 100000; count++ {
-		session.Send("echo", "Hello world")
-    }
-    for count = 0; count < 100000; count++ {
+	var count int
+	for count = 0; count < 100000; count++ {
+		err := session.Send("echo", "Hello world")
+		if err != nil {
+			log.Println("Send:", err)
+			break
+		}
+	}
+	for count = 0; count < 100000; count++ {
 		_, err := session.Recv()
 		if err != nil {
-			break	      //  Interrupted by Ctrl-C
+			log.Println("Recv:", err)
+			break
 		}
-    }
-    fmt.Printf("%d replies received\n", count)
+	}
+	fmt.Printf("%d replies received\n", count)
 }
