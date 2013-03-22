@@ -68,6 +68,9 @@ func NewBroker(verbose bool) (broker *Broker, err error) {
 		heartbeat_at: time.Now().Add(HEARTBEAT_INTERVAL),
 	}
 	broker.socket, err = zmq.NewSocket(zmq.ROUTER)
+
+	broker.socket.SetRcvhwm(500000) // or example mdclient2 won't work
+
 	runtime.SetFinalizer(broker, (*Broker).Close)
 	return
 }
