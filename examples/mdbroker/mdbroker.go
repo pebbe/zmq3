@@ -166,7 +166,7 @@ func (broker *Broker) ClientMsg(sender string, msg []string) {
 		var return_code string
 		if service_frame == "mmi.service" {
 			name := msg[len(msg)-1]
-			_, ok := broker.services[name]
+			service, ok := broker.services[name]
 			if ok && len(service.waiting) > 0 {
 				return_code = "200"
 			} else {
