@@ -6,6 +6,7 @@ package mdapi
 import (
 	zmq "github.com/pebbe/zmq3"
 
+	"errors"
 	"log"
 	"runtime"
 	"time"
@@ -162,10 +163,10 @@ func (mdcli *Mdcli) Send(service string, request ...string) (reply []string, err
 			mdcli.ConnectToBroker()
 		}
 	}
+	if err == nil {
+		err = errors.New("permanent error")
+	}
 	if mdcli.verbose {
-		if err != nil {
-			log.Println("E:", err)
-		}
 		log.Println("W: permanent error, abandoning")
 	}
 	return
