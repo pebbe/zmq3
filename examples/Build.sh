@@ -2,6 +2,8 @@
 
 go install github.com/pebbe/zmq3/examples/mdapi
 
+go get code.google.com/p/go-uuid/uuid
+
 cd `dirname $0`
 
 goos=`go env GOOS`
