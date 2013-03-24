@@ -1,5 +1,6 @@
 #!/bin/sh
 
+go install github.com/pebbe/zmq3/examples/bstar
 go install github.com/pebbe/zmq3/examples/mdapi
 
 go get code.google.com/p/go-uuid/uuid
@@ -39,7 +40,7 @@ do
 		continue
 	    fi
 	fi
-	if [ $i = mdapi ]
+	if [ $i = mdapi -o $i = bstar ]
 	then
 	    continue
 	fi
