@@ -27,7 +27,7 @@ func main() {
 	fmt.Print("Press Enter when the workers are ready: ")
 	var line string
 	fmt.Scanln(&line)
-	fmt.Println("Sending tasks to workers…")
+	fmt.Println("Sending tasks to workers...")
 
 	//  The first message is "0" and signals start of batch
 	sink.Send("0", 0)

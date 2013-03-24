@@ -20,7 +20,7 @@ const (
 )
 
 func main() {
-	fmt.Println("I: connecting to server…")
+	fmt.Println("I: connecting to server...")
 	client, err := zmq.NewSocket(zmq.REQ)
 	if err != nil {
 		panic(err)
@@ -69,7 +69,7 @@ func main() {
 					fmt.Println("E: server seems to be offline, abandoning")
 					break
 				} else {
-					fmt.Println("W: no response from server, retrying…")
+					fmt.Println("W: no response from server, retrying...")
 					//  Old socket is confused; close it and open a new one
 					client.Close()
 					client, _ = zmq.NewSocket(zmq.REQ)

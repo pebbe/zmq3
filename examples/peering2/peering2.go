@@ -84,7 +84,7 @@ func main() {
 	//  Other arguments are our peers' names
 	//
 	if len(os.Args) < 2 {
-		fmt.Println("syntax: peering2 me {you}…")
+		fmt.Println("syntax: peering2 me {you}...")
 		os.Exit(1)
 	}
 	for _, peer := range os.Args[2:] {
@@ -117,7 +117,7 @@ func main() {
 	defer localbe.Close()
 	localbe.Bind("ipc://" + self + "-localbe.ipc")
 
-	//  Get user to tell us when we can start…
+	//  Get user to tell us when we can start...
 	fmt.Print("Press Enter when all brokers are started: ")
 	var line string
 	fmt.Scanln(&line)

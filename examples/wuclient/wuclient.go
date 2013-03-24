@@ -16,7 +16,7 @@ import (
 
 func main() {
 	//  Socket to talk to server
-	fmt.Println("Collecting updates from weather server…")
+	fmt.Println("Collecting updates from weather server...")
 	subscriber, _ := zmq.NewSocket(zmq.SUB)
 	defer subscriber.Close()
 	subscriber.Connect("tcp://localhost:5556")

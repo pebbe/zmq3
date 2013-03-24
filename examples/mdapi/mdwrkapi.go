@@ -80,7 +80,7 @@ func (mdwrk *Mdwrk) ConnectToBroker() (err error) {
 	mdwrk.worker, err = zmq.NewSocket(zmq.DEALER)
 	err = mdwrk.worker.Connect(mdwrk.broker)
 	if mdwrk.verbose {
-		log.Printf("I: connecting to broker at %s…\n", mdwrk.broker)
+		log.Printf("I: connecting to broker at %s...\n", mdwrk.broker)
 	}
 	mdwrk.poller = zmq.NewPoller()
 	mdwrk.poller.Add(mdwrk.worker, zmq.POLLIN)
@@ -203,7 +203,7 @@ func (mdwrk *Mdwrk) Recv(reply []string) (msg []string, err error) {
 			switch command {
 			case MDPW_REQUEST:
 				//  We should pop and save as many addresses as there are
-				//  up to a null part, but for now, just save one…
+				//  up to a null part, but for now, just save one...
 				mdwrk.reply_to, msg = unwrap(msg)
 				//  Here is where we actually have a message to process; we
 				//  return it to the caller application:
@@ -219,7 +219,7 @@ func (mdwrk *Mdwrk) Recv(reply []string) (msg []string, err error) {
 			mdwrk.liveness--
 			if mdwrk.liveness == 0 {
 				if mdwrk.verbose {
-					log.Println("W: disconnected from broker - retrying…")
+					log.Println("W: disconnected from broker - retrying...")
 				}
 				time.Sleep(mdwrk.reconnect)
 				mdwrk.ConnectToBroker()

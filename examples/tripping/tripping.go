@@ -17,10 +17,10 @@ import (
 func ClientTask(pipe chan<- bool) {
 	client, _ := zmq.NewSocket(zmq.DEALER)
 	client.Connect("tcp://localhost:5555")
-	fmt.Println("Setting up test…")
+	fmt.Println("Setting up test...")
 	time.Sleep(100 * time.Millisecond)
 
-	fmt.Println("Synchronous round-trip test…")
+	fmt.Println("Synchronous round-trip test...")
 	start := time.Now()
 	var requests int
 	for requests = 0; requests < 10000; requests++ {
@@ -29,7 +29,7 @@ func ClientTask(pipe chan<- bool) {
 	}
 	fmt.Println(requests, "calls in", time.Since(start))
 
-	fmt.Println("Asynchronous round-trip test…")
+	fmt.Println("Asynchronous round-trip test...")
 	start = time.Now()
 	for requests = 0; requests < 100000; requests++ {
 		client.Send("hello", 0)

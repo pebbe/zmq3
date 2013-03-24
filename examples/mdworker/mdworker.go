@@ -25,7 +25,7 @@ func main() {
 		if err != nil {
 			break //  Worker was interrupted
 		}
-		reply = request //  Echo is complex… :-)
+		reply = request //  Echo is complex... :-)
 	}
 	log.Println(err)
 }

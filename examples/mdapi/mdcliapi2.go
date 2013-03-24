@@ -49,7 +49,7 @@ func (mdcli2 *Mdcli2) ConnectToBroker() (err error) {
 	mdcli2.poller.Add(mdcli2.client, zmq.POLLIN)
 
 	if mdcli2.verbose {
-		log.Printf("I: connecting to broker at %s…", mdcli2.broker)
+		log.Printf("I: connecting to broker at %s...", mdcli2.broker)
 	}
 	err = mdcli2.client.Connect(mdcli2.broker)
 	if err != nil && mdcli2.verbose {
@@ -123,7 +123,7 @@ func (mdcli2 *Mdcli2) Send(service string, request ...string) (err error) {
 //  ---------------------------------------------------------------------
 //  Returns the reply message or NULL if there was no reply. Does not
 //  attempt to recover from a broker failure, this is not possible
-//  without storing all unanswered requests and resending them all…
+//  without storing all unanswered requests and resending them all...
 
 func (mdcli2 *Mdcli2) Recv() (msg []string, err error) {
 
@@ -139,7 +139,7 @@ func (mdcli2 *Mdcli2) Recv() (msg []string, err error) {
 	if len(polled) > 0 {
 		msg, err = mdcli2.client.RecvMessage(0)
 		if err != nil {
-			log.Println("W: interrupt received, killing client…")
+			log.Println("W: interrupt received, killing client...")
 			return
 		}
 

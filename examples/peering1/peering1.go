@@ -18,11 +18,11 @@ func main() {
 	//  Other arguments are our peers' names
 	//
 	if len(os.Args) < 2 {
-		fmt.Println("syntax: peering1 me {you}…")
+		fmt.Println("syntax: peering1 me {you}...")
 		os.Exit(1)
 	}
 	self := os.Args[1]
-	fmt.Printf("I: preparing broker at %s…\n", self)
+	fmt.Printf("I: preparing broker at %s...\n", self)
 	rand.Seed(time.Now().UnixNano())
 
 	//  Bind state backend to endpoint

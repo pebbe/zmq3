@@ -380,7 +380,7 @@ func main() {
 			broker.heartbeat_at = time.Now().Add(HEARTBEAT_INTERVAL)
 		}
 	}
-	log.Println("W: interrupt received, shutting down…")
+	log.Println("W: interrupt received, shutting down...")
 }
 
 //  Pops frame off front of message and returns it as 'head'

@@ -19,7 +19,7 @@ func main() {
 	subscriber.Connect("tcp://localhost:5561")
 	subscriber.SetSubscribe("")
 
-	//  0MQ is so fast, we need to wait a while…
+	//  0MQ is so fast, we need to wait a while...
 	time.Sleep(time.Second)
 
 	//  Second, synchronize with publisher

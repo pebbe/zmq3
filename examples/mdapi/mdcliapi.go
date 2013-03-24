@@ -44,7 +44,7 @@ func (mdcli *Mdcli) ConnectToBroker() (err error) {
 	mdcli.poller.Add(mdcli.client, zmq.POLLIN)
 
 	if mdcli.verbose {
-		log.Printf("I: connecting to broker at %s…", mdcli.broker)
+		log.Printf("I: connecting to broker at %s...", mdcli.broker)
 	}
 	err = mdcli.client.Connect(mdcli.broker)
 	if err != nil && mdcli.verbose {
@@ -158,7 +158,7 @@ func (mdcli *Mdcli) Send(service string, request ...string) (reply []string, err
 			return //  Success
 		} else {
 			if mdcli.verbose {
-				log.Println("W: no reply, reconnecting…")
+				log.Println("W: no reply, reconnecting...")
 			}
 			mdcli.ConnectToBroker()
 		}

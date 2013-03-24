@@ -73,7 +73,7 @@ func main() {
 			ServiceCall(session, "titanic.close", uuid)
 			break
 		} else {
-			fmt.Println("I: no reply yet, trying again…")
+			fmt.Println("I: no reply yet, trying again...")
 			time.Sleep(5 * time.Second) //  Try again in 5 seconds
 		}
 	}
