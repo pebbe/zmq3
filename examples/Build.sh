@@ -2,6 +2,7 @@
 
 go install github.com/pebbe/zmq3/examples/bstar
 go install github.com/pebbe/zmq3/examples/mdapi
+go install github.com/pebbe/zmq3/examples/flcliapi
 
 go get code.google.com/p/go-uuid/uuid
 
@@ -40,7 +41,7 @@ do
 		continue
 	    fi
 	fi
-	if [ $i = mdapi -o $i = bstar ]
+	if [ $i = mdapi -o $i = bstar -o $i = flcliapi ]
 	then
 	    continue
 	fi
