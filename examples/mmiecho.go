@@ -1,6 +1,7 @@
 //
 //  MMI echo query example.
 //
+
 package main
 
 import (

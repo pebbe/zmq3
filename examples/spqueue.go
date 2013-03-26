@@ -3,6 +3,7 @@
 //  This is identical to load-balancing pattern, with no reliability
 //  mechanisms. It depends on the client for recovery. Runs forever.
 //
+
 package main
 
 import (

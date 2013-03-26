@@ -3,6 +3,7 @@
 //  A minimal Go implementation of the Majordomo Protocol as defined in
 //  http://rfc.zeromq.org/spec:7 and http://rfc.zeromq.org/spec:8.
 //
+
 package main
 
 import (

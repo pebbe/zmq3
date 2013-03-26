@@ -1,6 +1,7 @@
 //
 //  Paranoid Pirate worker.
 //
+
 package main
 
 import (

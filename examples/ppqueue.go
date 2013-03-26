@@ -1,6 +1,7 @@
 //
 //  Paranoid Pirate queue.
 //
+
 package main
 
 import (

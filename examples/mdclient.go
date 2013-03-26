@@ -2,6 +2,7 @@
 //  Majordomo Protocol client example.
 //  Uses the mdcli API to hide all MDP aspects
 //
+
 package main
 
 import (

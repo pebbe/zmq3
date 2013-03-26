@@ -2,6 +2,7 @@
 //  Freelance client - Model 3.
 //  Uses flcliapi class to encapsulate Freelance pattern
 //
+
 package main
 
 import (

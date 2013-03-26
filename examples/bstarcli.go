@@ -1,6 +1,7 @@
 //
 //  Binary Star client proof-of-concept implementation. This client does no
 //  real work; it just demonstrates the Binary Star failover model.
+
 package main
 
 import (

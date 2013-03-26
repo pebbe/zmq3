@@ -1,6 +1,7 @@
 //
 //  Synchronized subscriber
 //
+
 package main
 
 import (

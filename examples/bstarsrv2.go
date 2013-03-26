@@ -1,6 +1,7 @@
 //
 //  Binary Star server, using bstar reactor.
 //
+
 package main
 
 import (
