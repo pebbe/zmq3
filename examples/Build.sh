@@ -27,46 +27,38 @@ echo Installing examples in $dir
 
 mkdir -p $dir
 
-cp -u */*.sh $dir
-
-dirs=''
-for i in *
+for i in *.sh
 do
-    if [ -d $i ]
+    if [ $i != Build.sh ]
     then
-	if [ $i = interrupt ]
-	then
-	    if [ $goos = windows -o $goos = plan9 ]
-	    then
-		continue
-	    fi
-	fi
-	if [ $i = mdapi -o $i = bstar -o $i = flcliapi ]
+	cp -u $i $dir
+    fi
+done
+
+src=''
+for i in *.go
+do
+    if [ $i = interrupt.go ]
+    then
+	if [ $goos = windows -o $goos = plan9 ]
 	then
 	    continue
 	fi
-	if [ ! -f $dir/$i -o $dir/$i -ot $i/$i.go ]
-	then
-	    dirs="$dirs $i"
-	fi
     fi
+    src="$src $i"
 done
 
 libs=`pkg-config --libs-only-L libzmq`
 if [ "$libs" = "" ]
 then
-    for i in $dirs
+    for i in $src
     do
-	cd $i
-	go build -o $dir/$i .
-	cd ..
+	go build -o $dir/`basename $i .go` $i
     done
 else
     libs="-r `echo $libs | sed -e 's/-L//; s/  *-L/:/g'`"
-    for i in $dirs
+    for i in $src
     do
-	cd $i
-	go build -ldflags="$libs" -o $dir/$i .
-	cd ..
+	go build -ldflags="$libs" -o $dir/`basename $i .go` $i
     done
 fi
