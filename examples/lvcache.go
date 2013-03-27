@@ -57,7 +57,7 @@ LOOP:
 				//  Event is one byte 0=unsub or 1=sub, followed by topic
 				if frame[0] == 1 {
 					topic := frame[1:]
-					fmt.Println("Sending cached topic\n", topic)
+					fmt.Println("Sending cached topic", topic)
 					previous, ok := cache[topic]
 					if ok {
 						backend.SendMessage(topic, previous)
