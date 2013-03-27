@@ -45,7 +45,11 @@ do
 	    continue
 	fi
     fi
-    src="$src $i"
+    bin=$dir/`basename $i .go`
+    if [ ! -f $bin -o $i -nt $bin ]
+    then
+	src="$src $i"
+    fi
 done
 
 libs=`pkg-config --libs-only-L libzmq`
