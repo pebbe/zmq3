@@ -3,6 +3,7 @@
 go install github.com/pebbe/zmq3/examples/bstar
 go install github.com/pebbe/zmq3/examples/mdapi
 go install github.com/pebbe/zmq3/examples/flcliapi
+go install github.com/pebbe/zmq3/examples/kvsimple
 
 go get code.google.com/p/go-uuid/uuid
 
