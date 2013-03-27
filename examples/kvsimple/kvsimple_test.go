@@ -3,6 +3,7 @@ package kvsimple
 import (
 	zmq "github.com/pebbe/zmq3"
 
+	"os"
 	"testing"
 )
 
@@ -56,4 +57,8 @@ func TestKvmsg(t *testing.T) {
 		t.Error("Expected \"key\", got \"" + key + "\"")
 	}
 	kvmsg.Store(kvmap)
+
+	input.Close()
+	output.Close()
+	os.Remove("kvmsg_selftest.ipc")
 }
