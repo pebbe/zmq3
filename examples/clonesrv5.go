@@ -42,43 +42,15 @@ func main() {
 	srv.collector.Bind(fmt.Sprint("tcp://*:", srv.port+2))
 
 	//  Register our handlers with reactor
-	handlers := make(map[*zmq.Socket]func(*clonesrv_t) error)
-	handlers[srv.snapshot] = snapshots
-	handlers[srv.collector] = collector
-	poller := zmq.NewPoller()
-	poller.Add(srv.snapshot, zmq.POLLIN)
-	poller.Add(srv.collector, zmq.POLLIN)
+	reactor := zmq.NewReactor()
+	reactor.AddSocket(srv.snapshot, zmq.POLLIN,
+		func(e zmq.State) error { return snapshots(srv) })
+	reactor.AddSocket(srv.collector, zmq.POLLIN,
+		func(e zmq.State) error { return collector(srv) })
+	reactor.AddChannelTime(time.Tick(1000*time.Millisecond), 1,
+		func(v interface{}) error { return flush_ttl(srv) })
 
-	alarm := time.Now().Add(1000 * time.Millisecond)
-	var err error
-LOOP:
-	for {
-		tickless := alarm.Sub(time.Now())
-		if tickless < 0 {
-			tickless = 0
-		}
-		polled, e := poller.Poll(tickless)
-		if e != nil {
-			err = e
-			break LOOP
-		}
-		for _, item := range polled {
-			e := handlers[item.Socket](srv)
-			if e != nil {
-				err = e
-				break LOOP
-			}
-		}
-		if time.Now().After(alarm) {
-			e := flush_ttl(srv)
-			if e != nil {
-				err = e
-				break LOOP
-			}
-			alarm = time.Now().Add(1000 * time.Millisecond)
-		}
-	}
-	log.Println(err)
+	log.Println(reactor.Run(1000 * time.Millisecond))
 }
 
 //  This is the reactor handler for the snapshot socket; it accepts
@@ -133,12 +105,13 @@ func collector(srv *clonesrv_t) (err error) {
 	kvmsg.SetSequence(srv.sequence)
 	kvmsg.Send(srv.publisher)
 	if ttls, e := kvmsg.GetProp("ttl"); e == nil {
+		// change duration into specific time, using the same property: ugly!
 		ttl, e := strconv.ParseInt(ttls, 10, 64)
 		if e != nil {
 			err = e
 			return
 		}
-		kvmsg.SetProp("ttl", fmt.Sprint(time.Now().Add(time.Duration(ttl)*time.Millisecond).Unix()))
+		kvmsg.SetProp("ttl", fmt.Sprint(time.Now().Add(time.Duration(ttl)*time.Second).Unix()))
 	}
 	kvmsg.Store(srv.kvmap)
 	log.Println("I: publishing update =", srv.sequence)
@@ -150,6 +123,7 @@ func collector(srv *clonesrv_t) (err error) {
 //  could be slow on very large data sets:
 
 func flush_ttl(srv *clonesrv_t) (err error) {
+
 	for _, kvmsg := range srv.kvmap {
 
 		//  If key-value pair has expired, delete it and publish the

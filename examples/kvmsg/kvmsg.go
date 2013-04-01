@@ -229,7 +229,7 @@ func (kvmsg *Kvmsg) SetProp(name, value string) (err error) {
 //  the key is nil.
 func (kvmsg *Kvmsg) Store(kvmap map[string]*Kvmsg) {
 	if kvmsg.present[frame_KEY] {
-		if kvmsg.present[frame_BODY] {
+		if kvmsg.present[frame_BODY] && kvmsg.frame[frame_BODY] != "" {
 			kvmap[kvmsg.frame[frame_KEY]] = kvmsg
 		} else {
 			delete(kvmap, kvmsg.frame[frame_KEY])

@@ -76,7 +76,7 @@ func main() {
 			kvmsg := kvmsg.NewKvmsg(0)
 			kvmsg.SetKey(fmt.Sprintf("%s%d", SUBTREE, rand.Intn(10000)))
 			kvmsg.SetBody(fmt.Sprint(rand.Intn(1000000)))
-			kvmsg.SetProp("ttl", fmt.Sprintf("%d", rand.Intn((30))))
+			kvmsg.SetProp("ttl", fmt.Sprintf("%d", rand.Intn((30)))) // seconds
 			kvmsg.Send(publisher)
 			alarm = time.Now().Add(1000 * time.Millisecond)
 		}
