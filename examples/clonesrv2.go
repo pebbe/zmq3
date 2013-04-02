@@ -28,7 +28,7 @@ func main() {
 
 	//  Start state manager and wait for synchronization signal
 	updates, _ := zmq.NewSocket(zmq.PAIR)
-	updates.Bind("ipc://cloneserv2.ipc")
+	updates.Bind("inproc://pipe")
 	go state_manager()
 	updates.RecvMessage(0) // "READY"
 
@@ -55,7 +55,7 @@ func state_manager() {
 	kvmap := make(map[string]*kvsimple.Kvmsg)
 
 	pipe, _ := zmq.NewSocket(zmq.PAIR)
-	pipe.Connect("ipc://cloneserv2.ipc")
+	pipe.Connect("inproc://pipe")
 	pipe.SendMessage("READY")
 	snapshot, _ := zmq.NewSocket(zmq.ROUTER)
 	snapshot.Bind("tcp://*:5556")

@@ -54,7 +54,7 @@ func publisher_thread() {
 
 func listener_thread() {
 	pipe, _ := zmq.NewSocket(zmq.PAIR)
-	pipe.Connect("ipc://pipe")
+	pipe.Bind("inproc://pipe")
 
 	//  Print everything that arrives on pipe
 	for {
@@ -75,12 +75,14 @@ func main() {
 	go subscriber_thread()
 	go listener_thread()
 
+	time.Sleep(100 * time.Millisecond)
+
 	subscriber, _ := zmq.NewSocket(zmq.XSUB)
 	subscriber.Connect("tcp://localhost:6000")
 	publisher, _ := zmq.NewSocket(zmq.XPUB)
 	publisher.Bind("tcp://*:6001")
 	listener, _ := zmq.NewSocket(zmq.PAIR)
-	listener.Bind("ipc://pipe")
+	listener.Connect("inproc://pipe")
 	zmq.Proxy(subscriber, publisher, listener)
 
 	fmt.Println("interrupted")
