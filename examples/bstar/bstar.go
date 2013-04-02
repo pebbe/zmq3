@@ -41,18 +41,15 @@ const (
 //  Structure of our class
 
 type Bstar struct {
-	statepub    *zmq.Socket             //  State publisher
-	statesub    *zmq.Socket             //  State subscriber
-	state       state_t                 //  Current state
-	event       event_t                 //  Current event
-	peer_expiry time.Time               //  When peer is considered 'dead'
+	reactor     *zmq.Reactor //  Reactor loop
+	statepub    *zmq.Socket  //  State publisher
+	statesub    *zmq.Socket  //  State subscriber
+	state       state_t      //  Current state
+	event       event_t      //  Current event
+	peer_expiry time.Time    //  When peer is considered 'dead'
 	voter_fn    func(*zmq.Socket) error //  Voting socket handler
-	active_fn   func() error            //  Call when become active
-	passive_fn  func() error            //  Call when become passive
-
-	handlers map[*zmq.Socket]func(*zmq.Socket) error
-	poller   *zmq.Poller
-	verbose  bool
+	active_fn   func() error //  Call when become active
+	passive_fn  func() error //  Call when become passive
 }
 
 //  The finite-state machine is the same as in the proof-of-concept server.
@@ -170,8 +167,8 @@ func (bstar *Bstar) send_state() (err error) {
 }
 
 //  Receive state from peer, execute finite state machine
-func (bstar *Bstar) recv_state(socket *zmq.Socket) (err error) {
-	msg, err := socket.RecvMessage(0)
+func (bstar *Bstar) recv_state() (err error) {
+	msg, err := bstar.statesub.RecvMessage(0)
 	if err == nil {
 		e, _ := strconv.Atoi(msg[0])
 		bstar.event = event_t(e)
@@ -202,6 +199,7 @@ func New(primary bool, local, remote string) (bstar *Bstar, err error) {
 	bstar = &Bstar{}
 
 	//  Initialize the Binary Star
+	bstar.reactor = zmq.NewReactor()
 	if primary {
 		bstar.state = state_PRIMARY
 	} else {
@@ -218,11 +216,10 @@ func New(primary bool, local, remote string) (bstar *Bstar, err error) {
 	bstar.statesub.Connect(remote)
 
 	//  Set-up basic reactor events
-	bstar.poller = zmq.NewPoller()
-	bstar.poller.Add(bstar.statesub, zmq.POLLIN)
-
-	bstar.handlers = make(map[*zmq.Socket]func(*zmq.Socket) error)
-	bstar.handlers[bstar.statesub] = func(socket *zmq.Socket) error { return bstar.recv_state(socket) }
+	bstar.reactor.AddChannelTime(time.Tick(bstar_HEARTBEAT), 1,
+		func(i interface{}) error { return bstar.send_state() })
+	bstar.reactor.AddSocket(bstar.statesub, zmq.POLLIN,
+		func(e zmq.State) error { return bstar.recv_state() })
 
 	return
 }
@@ -240,10 +237,8 @@ func (bstar *Bstar) Voter(endpoint string, socket_type zmq.Type, handler func(*z
 		panic("Double voter function")
 	}
 	bstar.voter_fn = handler
-	bstar.poller.Add(socket, zmq.POLLIN)
-	bstar.handlers[socket] = func(soc *zmq.Socket) error {
-		return bstar.voter_ready(soc)
-	}
+	bstar.reactor.AddSocket(socket, zmq.POLLIN,
+		func (e zmq.State) error { return bstar.voter_ready(socket) })
 }
 
 //  Register handlers to be called each time there's a state change:
@@ -265,41 +260,16 @@ func (bstar *Bstar) NewPassive(handler func() error) {
 //  Enable/disable verbose tracing, for debugging:
 
 func (bstar *Bstar) SetVerbose(verbose bool) {
-	bstar.verbose = verbose
+	bstar.reactor.SetVerbose(verbose)
 }
 
 //?  Finally, start the configured reactor. It will end if any handler
 //?  returns error to the reactor, or if the process receives SIGINT or SIGTERM:
 
-func (bstar *Bstar) Start() {
+func (bstar *Bstar) Start() error {
 	if bstar.voter_fn == nil {
 		panic("Missing voter function")
 	}
-
 	bstar.update_peer_expiry()
-
-	// save to use another goroutine, because it uses a socket that isn't used in the main goroutine
-	go func() {
-		for {
-			time.Sleep(bstar_HEARTBEAT)
-			bstar.send_state()
-		}
-	}()
-
-LOOP:
-	for {
-		polled, err := bstar.poller.Poll(-1)
-		if err != nil {
-			break
-		}
-		for _, socket := range polled {
-			if bstar.verbose {
-				log.Println(socket.Socket)
-			}
-			err := bstar.handlers[socket.Socket](socket.Socket)
-			if err != nil {
-				break LOOP
-			}
-		}
-	}
+	return bstar.reactor.Run(bstar_HEARTBEAT / 5)
 }
