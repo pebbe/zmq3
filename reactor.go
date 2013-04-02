@@ -151,12 +151,16 @@ func (r *Reactor) Run(interval time.Duration) (err error) {
 			}
 		}
 
-		if len(r.sockets) == 0 {
-			return errors.New("No sockets to poll")
-		}
-
 		if len(r.channels) > 0 && interval < 0 {
 			return errors.New("There are channels, but polling time-out is infinite")
+		}
+
+		if len(r.sockets) == 0 {
+			if len(r.channels) == 0 {
+				return errors.New("No sockets to poll, no channels to read")
+			}
+			time.Sleep(interval)
+			continue
 		}
 
 		polled, e := r.p.Poll(interval)
