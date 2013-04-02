@@ -2,6 +2,7 @@ package zmq3
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -22,6 +23,7 @@ type Reactor struct {
 	p        *Poller
 	idx      uint64
 	remove   []uint64
+	verbose  bool
 }
 
 /*
@@ -88,7 +90,8 @@ func (r *Reactor) AddChannelTime(ch <-chan time.Time, limit int, handler func(in
 	ch2 := make(chan interface{})
 	go func () {
 		for {
-			ch2 <- ch
+			a := <-ch
+			ch2 <- a
 		}
 	}()
 	return r.AddChannel(ch2, limit, handler)
@@ -97,6 +100,10 @@ func (r *Reactor) AddChannelTime(ch <-chan time.Time, limit int, handler func(in
 // Remove a channel from the reactor.
 func (r *Reactor) RemoveChannel(id uint64) {
 	r.remove = append(r.remove, id)
+}
+
+func (r *Reactor) SetVerbose(verbose bool) {
+	r.verbose = verbose
 }
 
 // Run the reactor.
@@ -120,11 +127,14 @@ func (r *Reactor) Run(interval time.Duration) (err error) {
 		r.remove = r.remove[0:0]
 
 	CHANNELS:
-		for _, ch := range r.channels {
+		for id, ch := range r.channels {
 			limit := ch.limit
 			for {
 				select {
 				case val := <-ch.ch:
+					if r.verbose {
+						fmt.Printf("Reactor(%p) channel %d: %q\n", r, id, val)
+					}
 					err = ch.f(val)
 					if err != nil {
 						return
@@ -154,6 +164,9 @@ func (r *Reactor) Run(interval time.Duration) (err error) {
 			return e
 		}
 		for _, item := range polled {
+			if r.verbose {
+				fmt.Printf("Reactor(%p) %v\n", r, item)
+			}
 			err = r.sockets[item.Socket].f(item.Events)
 			if err != nil {
 				return
