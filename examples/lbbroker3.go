@@ -1,6 +1,6 @@
 //
 //  Load-balancing broker.
-//  Demonstrates use of higher level functions.
+//  Demonstrates use of Reactor, and other higher level functions.
 //
 
 package main
@@ -52,11 +52,65 @@ func worker_task() {
 	for {
 		msg, e := worker.RecvMessage(0)
 		if e != nil {
-			break //  Interrupted ??
+			break //  Interrupted
 		}
 		msg[len(msg)-1] = "OK"
 		worker.SendMessage(msg)
 	}
+}
+
+//  Our load-balancer structure, passed to reactor handlers
+type lbbroker_t struct {
+	frontend *zmq.Socket //  Listen to clients
+	backend  *zmq.Socket //  Listen to workers
+	workers  []string    //  List of ready workers
+	reactor  *zmq.Reactor
+}
+
+//  In the reactor design, each time a message arrives on a socket, the
+//  reactor passes it to a handler function. We have two handlers; one
+//  for the frontend, one for the backend:
+
+//  Handle input from client, on frontend
+func handle_frontend(lbbroker *lbbroker_t) error {
+
+	//  Get client request, route to first available worker
+	msg, err := lbbroker.frontend.RecvMessage(0)
+	if err != nil {
+		return err
+	}
+	lbbroker.backend.SendMessage(lbbroker.workers[0], "", msg)
+	lbbroker.workers = lbbroker.workers[1:]
+
+	//  Cancel reader on frontend if we went from 1 to 0 workers
+	if len(lbbroker.workers) == 0 {
+		lbbroker.reactor.RemoveSocket(lbbroker.frontend)
+	}
+	return nil
+}
+
+//  Handle input from worker, on backend
+func handle_backend(lbbroker *lbbroker_t) error {
+	//  Use worker identity for load-balancing
+	msg, err := lbbroker.backend.RecvMessage(0)
+	if err != nil {
+		return err
+	}
+	identity, msg := unwrap(msg)
+	lbbroker.workers = append(lbbroker.workers, identity)
+
+	//  Enable reader on frontend if we went from 0 to 1 workers
+	if len(lbbroker.workers) == 1 {
+		lbbroker.reactor.AddSocket(lbbroker.frontend, zmq.POLLIN,
+			func(e zmq.State) error { return handle_frontend(lbbroker) })
+	}
+
+	//  Forward message to client if it's not a READY
+	if msg[0] != WORKER_READY {
+		lbbroker.frontend.SendMessage(msg)
+	}
+
+	return nil
 }
 
 //  Now we come to the main task. This has the identical functionality to
@@ -64,13 +118,13 @@ func worker_task() {
 //  and send messages:
 
 func main() {
-	//  Prepare our sockets
-	frontend, _ := zmq.NewSocket(zmq.ROUTER)
-	backend, _ := zmq.NewSocket(zmq.ROUTER)
-	defer frontend.Close()
-	defer backend.Close()
-	frontend.Bind("ipc://frontend.ipc")
-	backend.Bind("ipc://backend.ipc")
+	lbbroker := &lbbroker_t{}
+	lbbroker.frontend, _ = zmq.NewSocket(zmq.ROUTER)
+	lbbroker.backend, _ = zmq.NewSocket(zmq.ROUTER)
+	defer lbbroker.frontend.Close()
+	defer lbbroker.backend.Close()
+	lbbroker.frontend.Bind("ipc://frontend.ipc")
+	lbbroker.backend.Bind("ipc://backend.ipc")
 
 	for client_nbr := 0; client_nbr < NBR_CLIENTS; client_nbr++ {
 		go client_task()
@@ -80,68 +134,13 @@ func main() {
 	}
 
 	//  Queue of available workers
-	workers := make([]string, 0, 10)
+	lbbroker.workers = make([]string, 0, 10)
 
-	//  Handle input from client, on frontend
-	handle_frontend := func() error {
-		//  Get client request, route to first available worker
-		msg, err := frontend.RecvMessage(0)
-		if err == nil {
-			backend.SendMessage(workers[0], "", msg)
-			workers = workers[1:]
-		}
-		return err
-	}
-
-	//  Handle input from worker, on backend
-	handle_backend := func() error {
-
-		//  Use worker identity for load-balancing
-		msg, err := backend.RecvMessage(0)
-		if err != nil {
-			return err
-		}
-		identity, msg := unwrap(msg)
-		workers = append(workers, identity)
-
-		//  Forward message to client if it's not a READY
-		if msg[0] != WORKER_READY {
-			frontend.SendMessage(msg)
-		}
-		return nil
-	}
-
-	handlers := make(map[*zmq.Socket]func() error)
-	handlers[frontend] = handle_frontend
-	handlers[backend] = handle_backend
-
-	poller1 := zmq.NewPoller()
-	poller1.Add(backend, zmq.POLLIN)
-	poller2 := zmq.NewPoller()
-	poller2.Add(backend, zmq.POLLIN)
-	poller2.Add(frontend, zmq.POLLIN)
-
-LOOP:
-	for {
-		//  Poll frontend only if we have available workers
-		var sockets []zmq.Polled
-		var err error
-		if len(workers) > 0 {
-			sockets, err = poller2.Poll(-1)
-		} else {
-			sockets, err = poller1.Poll(-1)
-		}
-		if err != nil {
-			break //  Interrupted
-		}
-		for _, socket := range sockets {
-			if err := handlers[socket.Socket](); err != nil {
-				break LOOP
-			}
-		}
-	}
-
-	time.Sleep(100 * time.Millisecond)
+	//  Prepare reactor and fire it up
+	lbbroker.reactor = zmq.NewReactor()
+	lbbroker.reactor.AddSocket(lbbroker.backend, zmq.POLLIN,
+		func(e zmq.State) error { return handle_backend(lbbroker) })
+	lbbroker.reactor.Run(-1)
 }
 
 //  Pops frame off front of message and returns it as 'head'
