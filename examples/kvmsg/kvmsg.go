@@ -185,7 +185,7 @@ func (kvmsg *Kvmsg) GetUuid() (uuid string, err error) {
 
 //  Sets the UUID to a random generated value
 func (kvmsg *Kvmsg) SetUuid() {
-	kvmsg.frame[frame_UUID] = uuid.New()
+	kvmsg.frame[frame_UUID] = string(uuid.NewRandom()) // raw 16 bytes
 	kvmsg.present[frame_UUID] = true
 
 }

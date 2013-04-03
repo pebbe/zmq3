@@ -41,7 +41,7 @@ const (
 //  Structure of our class
 
 type Bstar struct {
-	reactor     *zmq.Reactor //  Reactor loop
+	Reactor     *zmq.Reactor //  Reactor loop
 	statepub    *zmq.Socket  //  State publisher
 	statesub    *zmq.Socket  //  State subscriber
 	state       state_t      //  Current state
@@ -199,7 +199,7 @@ func New(primary bool, local, remote string) (bstar *Bstar, err error) {
 	bstar = &Bstar{}
 
 	//  Initialize the Binary Star
-	bstar.reactor = zmq.NewReactor()
+	bstar.Reactor = zmq.NewReactor()
 	if primary {
 		bstar.state = state_PRIMARY
 	} else {
@@ -216,9 +216,9 @@ func New(primary bool, local, remote string) (bstar *Bstar, err error) {
 	bstar.statesub.Connect(remote)
 
 	//  Set-up basic reactor events
-	bstar.reactor.AddChannelTime(time.Tick(bstar_HEARTBEAT), 1,
+	bstar.Reactor.AddChannelTime(time.Tick(bstar_HEARTBEAT), 1,
 		func(i interface{}) error { return bstar.send_state() })
-	bstar.reactor.AddSocket(bstar.statesub, zmq.POLLIN,
+	bstar.Reactor.AddSocket(bstar.statesub, zmq.POLLIN,
 		func(e zmq.State) error { return bstar.recv_state() })
 
 	return
@@ -237,7 +237,7 @@ func (bstar *Bstar) Voter(endpoint string, socket_type zmq.Type, handler func(*z
 		panic("Double voter function")
 	}
 	bstar.voter_fn = handler
-	bstar.reactor.AddSocket(socket, zmq.POLLIN,
+	bstar.Reactor.AddSocket(socket, zmq.POLLIN,
 		func (e zmq.State) error { return bstar.voter_ready(socket) })
 }
 
@@ -260,7 +260,7 @@ func (bstar *Bstar) NewPassive(handler func() error) {
 //  Enable/disable verbose tracing, for debugging:
 
 func (bstar *Bstar) SetVerbose(verbose bool) {
-	bstar.reactor.SetVerbose(verbose)
+	bstar.Reactor.SetVerbose(verbose)
 }
 
 //?  Finally, start the configured reactor. It will end if any handler
@@ -271,5 +271,5 @@ func (bstar *Bstar) Start() error {
 		panic("Missing voter function")
 	}
 	bstar.update_peer_expiry()
-	return bstar.reactor.Run(bstar_HEARTBEAT / 5)
+	return bstar.Reactor.Run(bstar_HEARTBEAT / 5)
 }
