@@ -88,9 +88,13 @@ func (r *Reactor) AddChannel(ch <-chan interface{}, limit int, handler func(inte
 // This function wraps AddChannel, using a channel of type time.Time instead of type interface{}.
 func (r *Reactor) AddChannelTime(ch <-chan time.Time, limit int, handler func(interface{}) error) (id uint64) {
 	ch2 := make(chan interface{})
-	go func () {
+	go func() {
 		for {
-			a := <-ch
+			a, ok := <-ch
+			if !ok {
+				close(ch2)
+				break
+			}
 			ch2 <- a
 		}
 	}()
@@ -98,6 +102,8 @@ func (r *Reactor) AddChannelTime(ch <-chan time.Time, limit int, handler func(in
 }
 
 // Remove a channel from the reactor.
+//
+// Closed channels are removed automaticly.
 func (r *Reactor) RemoveChannel(id uint64) {
 	r.remove = append(r.remove, id)
 }
@@ -131,7 +137,14 @@ func (r *Reactor) Run(interval time.Duration) (err error) {
 			limit := ch.limit
 			for {
 				select {
-				case val := <-ch.ch:
+				case val, ok := <-ch.ch:
+					if !ok {
+						if r.verbose {
+							fmt.Printf("Reactor(%p) removing closed channel %d\n", r, id)
+						}
+						r.RemoveChannel(id)
+						continue CHANNELS
+					}
 					if r.verbose {
 						fmt.Printf("Reactor(%p) channel %d: %q\n", r, id, val)
 					}
