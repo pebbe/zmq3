@@ -55,6 +55,7 @@ func server_thread() {
 	//  Default HWM is 1000, which will drop messages here
 	//  since we send more than 1,000 chunks of test data,
 	//  so set an infinite HWM as a simple, stupid solution:
+	router.SetRcvhwm(0)
 	router.SetSndhwm(0)
 	router.Bind("tcp://*:6000")
 	for {
