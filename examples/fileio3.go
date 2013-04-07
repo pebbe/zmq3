@@ -1,7 +1,7 @@
-//  File Transfer model #2
+//  File Transfer model #3
 //
-//  In which the client requests each chunk individually, thus
-//  eliminating server queue overflows, but at a cost in speed.
+//  In which the client requests each chunk individually, using
+//  command pipelining to give us a credit-based flow control.
 
 package main
 
@@ -15,24 +15,33 @@ import (
 
 const (
 	CHUNK_SIZE = 250000
+	PIPELINE   = 10
 )
 
 func client_thread(pipe chan<- string) {
 	dealer, _ := zmq.NewSocket(zmq.DEALER)
 	dealer.Connect("tcp://127.0.0.1:6000")
 
+	//  Up to this many chunks in transit
+	credit := PIPELINE
+
 	total := 0  //  Total bytes received
 	chunks := 0 //  Total chunks received
+	offset := 0 //  Offset of next chunk request
 
 	for {
-		//  Ask for next chunk
-		dealer.SendMessage("fetch", total, CHUNK_SIZE)
-
+		for credit > 0 {
+			//  Ask for next chunk
+			dealer.SendMessage("fetch", offset, CHUNK_SIZE)
+			offset += CHUNK_SIZE
+			credit--
+		}
 		chunk, err := dealer.RecvBytes(0)
 		if err != nil {
 			break //  Shutting down, quit
 		}
 		chunks++
+		credit++
 		size := len(chunk)
 		total += size
 		if size < CHUNK_SIZE {
@@ -42,6 +51,10 @@ func client_thread(pipe chan<- string) {
 	fmt.Printf("%v chunks received, %v bytes\n", chunks, total)
 	pipe <- "OK"
 }
+
+//  The rest of the code is exactly the same as in model 2, except
+//  that we set the HWM on the server's ROUTER socket to PIPELINE
+//  to act as a sanity check.
 
 //  The server thread waits for a chunk request from a client,
 //  reads that chunk and sends it back to the client:
@@ -53,8 +66,8 @@ func server_thread() {
 	}
 
 	router, _ := zmq.NewSocket(zmq.ROUTER)
-	router.SetRcvhwm(1)
-	router.SetSndhwm(1)
+	router.SetRcvhwm(PIPELINE * 2)
+	router.SetSndhwm(PIPELINE * 2)
 	router.Bind("tcp://*:6000")
 	for {
 		msg, err := router.RecvMessage(0)
