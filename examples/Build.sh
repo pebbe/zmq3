@@ -6,6 +6,7 @@ go install github.com/pebbe/zmq3/examples/flcliapi
 go install github.com/pebbe/zmq3/examples/kvsimple
 go install github.com/pebbe/zmq3/examples/kvmsg
 go install github.com/pebbe/zmq3/examples/clone
+go install github.com/pebbe/zmq3/examples/intface
 
 go get code.google.com/p/go-uuid/uuid
 
