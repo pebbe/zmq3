@@ -1,12 +1,9 @@
 #!/bin/sh
 
-go install github.com/pebbe/zmq3/examples/bstar
-go install github.com/pebbe/zmq3/examples/mdapi
-go install github.com/pebbe/zmq3/examples/flcliapi
-go install github.com/pebbe/zmq3/examples/kvsimple
-go install github.com/pebbe/zmq3/examples/kvmsg
-go install github.com/pebbe/zmq3/examples/clone
-go install github.com/pebbe/zmq3/examples/intface
+for i in bstar mdapi flcliapi kvsimple kvmsg clone intface
+do
+    go install github.com/pebbe/zmq3/examples/$i
+done
 
 go get code.google.com/p/go-uuid/uuid
 
