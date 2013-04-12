@@ -1,11 +1,11 @@
 #!/bin/sh
 
+go get code.google.com/p/go-uuid/uuid
+
 for i in bstar mdapi flcliapi kvsimple kvmsg clone intface
 do
     go install github.com/pebbe/zmq3/examples/$i
 done
-
-go get code.google.com/p/go-uuid/uuid
 
 cd `dirname $0`
 
