@@ -105,7 +105,8 @@ type agent_t struct {
 func new_agent() (agent *agent_t) {
 
 	// push output from udp into zmq socket
-	conn, e := net.ListenUDP("udp", &net.UDPAddr{Port: PING_PORT_NUMBER})
+	bcast := &net.UDPAddr{Port: PING_PORT_NUMBER, IP: net.IPv4bcast}
+	conn, e := net.ListenUDP("udp", bcast)
 	if e != nil {
 		panic(e)
 	}
