@@ -25,14 +25,13 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 
 	//  Create UDP socket
-
-	conn, err := net.ListenUDP("udp", &net.UDPAddr{Port: PING_PORT_NUMBER})
+	bcast := &net.UDPAddr{Port: PING_PORT_NUMBER, IP: net.IPv4bcast}
+	conn, err := net.ListenUDP("udp", bcast)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	buffer := make([]byte, PING_MSG_SIZE)
-	bcast := &net.UDPAddr{Port: PING_PORT_NUMBER, IP: net.IPv4bcast}
 
 	//  We send a beacon once a second, and we collect and report
 	//  beacons that come in from other nodes:
