@@ -4,6 +4,8 @@ For ZeroMQ version 2, see: http://github.com/pebbe/zmq2
 
 Including all examples of [ØMQ - The Guide](http://zguide.zeromq.org/page:all).
 
+Keywords: networks, distributed computing, message passing, fanout, pubsub, pipeline, request-reply
+
 ## Install
 
     go get github.com/pebbe/zmq3
