@@ -21,6 +21,13 @@ func (soc *Socket) setString(opt C.int, s string) error {
 	return nil
 }
 
+func (soc *Socket) setNullString(opt C.int) error {
+	if i, err := C.zmq_setsockopt(soc.soc, opt, nil, 0); i != 0 {
+		return errget(err)
+	}
+	return nil
+}
+
 func (soc *Socket) setInt(opt C.int, value int) error {
 	val := C.int(value)
 	if i, err := C.zmq_setsockopt(soc.soc, opt, unsafe.Pointer(&val), C.size_t(unsafe.Sizeof(val))); i != 0 {
@@ -247,7 +254,7 @@ func (soc *Socket) SetTcpKeepaliveIdle(value int) error {
 	return soc.setInt(C.ZMQ_TCP_KEEPALIVE_IDLE, value)
 }
 
-// ZMQ_TCP_KEEPALIVE_CNT: ZMQ_TCP_KEEPALIVE_CNT: Override TCP_KEEPCNT socket option
+// ZMQ_TCP_KEEPALIVE_CNT: Override TCP_KEEPCNT socket option
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc27
 func (soc *Socket) SetTcpKeepaliveCnt(value int) error {
@@ -265,5 +272,8 @@ func (soc *Socket) SetTcpKeepaliveIntvl(value int) error {
 //
 // See: http://api.zeromq.org/3-2:zmq-setsockopt#toc29
 func (soc *Socket) SetTcpAcceptFilter(filter string) error {
+	if len(filter) == 0 {
+		return soc.setNullString(C.ZMQ_TCP_ACCEPT_FILTER)
+	}
 	return soc.setString(C.ZMQ_TCP_ACCEPT_FILTER, filter)
 }
