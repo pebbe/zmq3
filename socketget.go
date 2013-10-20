@@ -7,6 +7,7 @@ package zmq3
 import "C"
 
 import (
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -17,7 +18,7 @@ func (soc *Socket) getString(opt C.int, bufsize int) (string, error) {
 	if i, err := C.zmq_getsockopt(soc.soc, opt, unsafe.Pointer(&value[0]), &size); i != 0 {
 		return "", errget(err)
 	}
-	return string(value[:int(size)]), nil
+	return strings.TrimRight(string(value[:int(size)]), "\x00"), nil
 }
 
 func (soc *Socket) getInt(opt C.int) (int, error) {
@@ -84,7 +85,7 @@ func (soc *Socket) GetAffinity() (uint64, error) {
 	return soc.getUInt64(C.ZMQ_AFFINITY)
 }
 
-// ZMQ_IDENTITY: Set socket identity
+// ZMQ_IDENTITY: Get socket identity
 //
 // See: http://api.zeromq.org/3-2:zmq-getsockopt#toc8
 func (soc *Socket) GetIdentity() (string, error) {
