@@ -125,6 +125,19 @@ func SetMaxSockets(n int) error {
 	return setOption(C.ZMQ_MAX_SOCKETS, n)
 }
 
+/*
+Terminates the context.
+
+For linger behavior, see: http://api.zeromq.org/3-2:zmq-ctx-destroy
+*/
+func Term() error {
+	n, err := C.zmq_ctx_destroy(ctx)
+	if n != 0 {
+		return errget(err)
+	}
+	return nil
+}
+
 //. Sockets
 
 // Specifies the type of a socket, used by NewSocket()
