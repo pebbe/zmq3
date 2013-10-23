@@ -506,6 +506,7 @@ Example:
             }
             log.Println(a, b, c)
         }
+        s.Close()
     }
 
     func main() {
@@ -515,7 +516,6 @@ Example:
         if err != nil {
             log.Fatalln(err)
         }
-        defer rep.Close()
 
         // REP socket monitor, all events
         err = rep.Monitor("inproc://monitor.rep", zmq.EVENT_ALL)
@@ -532,6 +532,9 @@ Example:
 
         // Allow some time for event detection
         time.Sleep(time.Second)
+
+        rep.Close()
+        zmq.Term()
     }
 */
 func (soc *Socket) Monitor(addr string, events Event) error {
