@@ -8,12 +8,14 @@ import (
 	"runtime"
 )
 
-func Example_connect_delay() {
+func Example_test_connect_delay() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_connect_resolve() {
+func Example_test_connect_resolve() {
 
 	/*
 		copied from zmq4
@@ -39,102 +41,138 @@ func Example_connect_resolve() {
 	err = sock.Close()
 	checkErr(err)
 
+	fmt.Println("Done")
 	// Output:
 	// invalid argument
 	// invalid argument
 	// protocol not supported
-
-	// Output:
+	// Done
 }
 
-func Example_disconnect_inproc() {
+func Example_test_disconnect_inproc() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_hwm() {
+func Example_test_hwm() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_invalid_rep() {
+func Example_test_invalid_rep() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_last_endpoint() {
+func Example_test_last_endpoint() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_monitor() {
+func Example_test_monitor() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_msg_flags() {
+func Example_test_msg_flags() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_pair_inproc() {
+func Example_test_pair_inproc() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_pair_ipc() {
+func Example_test_pair_ipc() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_pair_tcp() {
+func Example_test_pair_tcp() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_reqrep_device() {
+func Example_test_reqrep_device() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_reqrep_inproc() {
+func Example_test_reqrep_inproc() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_reqrep_ipc() {
+func Example_test_reqrep_ipc() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_reqrep_tcp() {
+func Example_test_reqrep_tcp() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_router_mandatory() {
+func Example_test_router_mandatory() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_shutdown_stress() {
+func Example_test_shutdown_stress() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_sub_forward() {
+func Example_test_sub_forward() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_term_endpoint() {
+func Example_test_term_endpoint() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
-func Example_timeo() {
+func Example_test_timeo() {
 
+	fmt.Println("Done")
 	// Output:
+	// Done
 }
 
 func bounce(server, client *zmq.Socket) {

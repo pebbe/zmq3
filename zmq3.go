@@ -1,5 +1,7 @@
 // A Go interface to ZeroMQ version 3.
 //
+// For ZeroMQ version 4, see: http://github.com/pebbe/zmq4
+//
 // For ZeroMQ version 2, see: http://github.com/pebbe/zmq2
 //
 // http://www.zeromq.org/
