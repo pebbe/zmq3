@@ -53,7 +53,7 @@ do
     fi
 done
 
-libs=`pkg-config --libs-only-L libzmq`
+libs=$(pkg-config --libs-only-L libzmq |tr -d "\n" | sed -e "s/[ \t]*$//")
 if [ "$libs" = "" ]
 then
     for i in $src
