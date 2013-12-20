@@ -332,6 +332,13 @@ func (soc Socket) String() string {
 }
 
 /*
+Socket as a raw 0MQ socket.
+*/
+func (soc *Socket) Raw() unsafe.Pointer {
+	return soc.soc
+}
+
+/*
 Create 0MQ socket.
 
 WARNING:
