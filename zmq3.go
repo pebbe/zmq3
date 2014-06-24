@@ -1,10 +1,3 @@
-// A Go interface to ZeroMQ (zmq, 0mq) version 3.
-//
-// For ZeroMQ version 4, see: http://github.com/pebbe/zmq4
-//
-// For ZeroMQ version 2, see: http://github.com/pebbe/zmq2
-//
-// http://www.zeromq.org/
 package zmq3
 
 /*
@@ -45,13 +38,14 @@ import (
 )
 
 var (
-	ctx unsafe.Pointer
+	ctx *Context
 )
 
 func init() {
 	var err error
-	ctx, err = C.zmq_ctx_new()
-	if ctx == nil {
+	ctx = &Context{}
+	ctx.ctx, err = C.zmq_ctx_new()
+	if ctx.ctx == nil {
 		panic("Init of ZeroMQ context failed: " + errget(err).Error())
 	}
 }
@@ -80,8 +74,54 @@ func Error(e int) string {
 
 //. Context
 
-func getOption(o C.int) (int, error) {
-	nc, err := C.zmq_ctx_get(ctx, o)
+/*
+A context that is not the default context.
+*/
+type Context struct {
+        ctx unsafe.Pointer
+}
+
+// Create a new context.
+func NewContext() (ctx *Context, err error) {
+        ctx = &Context{}
+        c, e := C.zmq_ctx_new()
+        if c == nil {
+                err = errget(e)
+        } else {
+                ctx.ctx = c
+                runtime.SetFinalizer(ctx, (*Context).Term)
+        }
+        return
+}
+
+/*
+Terminates the default context.
+
+For linger behavior, see: http://api.zeromq.org/3-2:zmq-ctx-destroy
+*/
+func Term() error {
+	n, err := C.zmq_ctx_destroy(ctx.ctx)
+	if n != 0 {
+		return errget(err)
+	}
+	return nil
+}
+
+/*
+Terminates the context.
+
+For linger behavior, see: http://api.zeromq.org/3-2:zmq-ctx-destroy
+*/
+func (ctx *Context) Term() error {
+	n, err := C.zmq_ctx_destroy(ctx.ctx)
+	if n != 0 {
+		return errget(err)
+	}
+	return nil
+}
+
+func getOption(ctx *Context, o C.int) (int, error) {
+	nc, err := C.zmq_ctx_get(ctx.ctx, o)
 	n := int(nc)
 	if n < 0 {
 		return n, errget(err)
@@ -89,22 +129,44 @@ func getOption(o C.int) (int, error) {
 	return n, nil
 }
 
-// Returns the size of the 0MQ thread pool.
+// Returns the size of the 0MQ thread pool in the default context.
 func GetIoThreads() (int, error) {
-	return getOption(C.ZMQ_IO_THREADS)
+	return getOption(ctx, C.ZMQ_IO_THREADS)
+}
+
+// Returns the size of the 0MQ thread pool.
+func (ctx *Context) GetIoThreads() (int, error) {
+	return getOption(ctx, C.ZMQ_IO_THREADS)
+}
+
+// Returns the maximum number of sockets allowed in the default context.
+func GetMaxSockets() (int, error) {
+	return getOption(ctx, C.ZMQ_MAX_SOCKETS)
 }
 
 // Returns the maximum number of sockets allowed.
-func GetMaxSockets() (int, error) {
-	return getOption(C.ZMQ_MAX_SOCKETS)
+func (ctx *Context) GetMaxSockets() (int, error) {
+	return getOption(ctx, C.ZMQ_MAX_SOCKETS)
 }
 
-func setOption(o C.int, n int) error {
-	i, err := C.zmq_ctx_set(ctx, o, C.int(n))
+func setOption(ctx *Context, o C.int, n int) error {
+	i, err := C.zmq_ctx_set(ctx.ctx, o, C.int(n))
 	if int(i) != 0 {
 		return errget(err)
 	}
 	return nil
+}
+
+/*
+Specifies the size of the 0MQ thread pool to handle I/O operations in
+the default context. If your application is using only the inproc
+transport for messaging you may set this to zero, otherwise set it to at
+least one. This option only applies before creating any sockets.
+
+Default value   1
+*/
+func SetIoThreads(n int) error {
+	return setOption(ctx, C.ZMQ_IO_THREADS, n)
 }
 
 /*
@@ -115,8 +177,17 @@ applies before creating any sockets.
 
 Default value   1
 */
-func SetIoThreads(n int) error {
-	return setOption(C.ZMQ_IO_THREADS, n)
+func (ctx *Context) SetIoThreads(n int) error {
+	return setOption(ctx, C.ZMQ_IO_THREADS, n)
+}
+
+/*
+Sets the maximum number of sockets allowed in the default context.
+
+Default value   1024
+*/
+func SetMaxSockets(n int) error {
+	return setOption(ctx, C.ZMQ_MAX_SOCKETS, n)
 }
 
 /*
@@ -124,21 +195,8 @@ Sets the maximum number of sockets allowed.
 
 Default value   1024
 */
-func SetMaxSockets(n int) error {
-	return setOption(C.ZMQ_MAX_SOCKETS, n)
-}
-
-/*
-Terminates the context.
-
-For linger behavior, see: http://api.zeromq.org/3-2:zmq-ctx-destroy
-*/
-func Term() error {
-	n, err := C.zmq_ctx_destroy(ctx)
-	if n != 0 {
-		return errget(err)
-	}
-	return nil
+func (ctx *Context) SetMaxSockets(n int) error {
+	return setOption(ctx, C.ZMQ_MAX_SOCKETS, n)
 }
 
 //. Sockets
@@ -317,6 +375,7 @@ getting socket options.
 */
 type Socket struct {
 	soc unsafe.Pointer
+	ctx *Context
 }
 
 /*
@@ -332,7 +391,7 @@ func (soc Socket) String() string {
 }
 
 /*
-Create 0MQ socket.
+Create 0MQ socket in the default context.
 
 WARNING:
 The Socket is not thread safe. This means that you cannot access the same Socket
@@ -342,11 +401,34 @@ For a description of socket types, see: http://api.zeromq.org/3-2:zmq-socket#toc
 */
 func NewSocket(t Type) (soc *Socket, err error) {
 	soc = &Socket{}
-	s, e := C.zmq_socket(ctx, C.int(t))
+	s, e := C.zmq_socket(ctx.ctx, C.int(t))
 	if s == nil {
 		err = errget(e)
 	} else {
 		soc.soc = s
+		soc.ctx = ctx
+		runtime.SetFinalizer(soc, (*Socket).Close)
+	}
+	return
+}
+
+/*
+Create 0MQ socket in the given context.
+
+WARNING:
+The Socket is not thread safe. This means that you cannot access the same Socket
+from different goroutines without using something like a mutex.
+
+For a description of socket types, see: http://api.zeromq.org/3-2:zmq-socket#toc3
+*/
+func (ctx *Context) NewSocket(t Type) (soc *Socket, err error) {
+	soc = &Socket{}
+	s, e := C.zmq_socket(ctx.ctx, C.int(t))
+	if s == nil {
+		err = errget(e)
+	} else {
+		soc.soc = s
+		soc.ctx = ctx
 		runtime.SetFinalizer(soc, (*Socket).Close)
 	}
 	return
@@ -358,6 +440,7 @@ func (soc *Socket) Close() error {
 		return errget(err)
 	}
 	soc.soc = unsafe.Pointer(nil)
+	soc.ctx = nil
 	return nil
 }
 
