@@ -33,7 +33,6 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
-	"syscall"
 	"unsafe"
 )
 
@@ -52,14 +51,6 @@ func init() {
 }
 
 //. Util
-
-func errget(err error) error {
-	errno, ok := err.(syscall.Errno)
-	if ok && errno >= C.ZMQ_HAUSNUMERO {
-		return errors.New(C.GoString(C.zmq_strerror(C.int(errno))))
-	}
-	return err
-}
 
 // Report 0MQ library version.
 func Version() (major, minor, patch int) {
