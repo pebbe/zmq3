@@ -558,6 +558,10 @@ Register a monitoring callback.
 
 See: http://api.zeromq.org/3-2:zmq-socket-monitor#toc2
 
+WARNING: Closing a context with a monitoring callback will lead to random crashes.
+This is a bug in the ZeroMQ library.
+The monitoring callback has the same context as the socket it was created for.
+
 Example:
 
     package main
