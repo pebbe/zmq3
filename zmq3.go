@@ -38,6 +38,10 @@ import (
 
 var (
 	defaultCtx *Context
+
+	errContextClosed = errors.New("Context is closed")
+	errSocketClosed  = errors.New("Socket is closed")
+	errNoEvent       = errors.New("Not an event")
 )
 
 func init() {
@@ -116,6 +120,9 @@ func (ctx *Context) Term() error {
 }
 
 func getOption(ctx *Context, o C.int) (int, error) {
+	if !ctx.opened {
+		return 0, errContextClosed
+	}
 	nc, err := C.zmq_ctx_get(ctx.ctx, o)
 	n := int(nc)
 	if n < 0 {
@@ -145,6 +152,9 @@ func (ctx *Context) GetMaxSockets() (int, error) {
 }
 
 func setOption(ctx *Context, o C.int, n int) error {
+	if !ctx.opened {
+		return errContextClosed
+	}
 	i, err := C.zmq_ctx_set(ctx.ctx, o, C.int(n))
 	if int(i) != 0 {
 		return errget(err)
@@ -379,7 +389,13 @@ type Socket struct {
 Socket as string.
 */
 func (soc Socket) String() string {
-	t, _ := soc.GetType()
+	if !soc.opened {
+		return "Socket(CLOSED)"
+	}
+	t, err := soc.GetType()
+	if err != nil {
+		return fmt.Sprintf("Socket(%v)", err)
+	}
 	i, err := soc.GetIdentity()
 	if err == nil && i != "" {
 		return fmt.Sprintf("Socket(%v,%q)", t, i)
@@ -411,6 +427,9 @@ For a description of socket types, see: http://api.zeromq.org/3-2:zmq-socket#toc
 */
 func (ctx *Context) NewSocket(t Type) (soc *Socket, err error) {
 	soc = &Socket{}
+	if !ctx.opened {
+		return soc, errContextClosed
+	}
 	s, e := C.zmq_socket(ctx.ctx, C.int(t))
 	if s == nil {
 		err = errget(e)
@@ -443,6 +462,9 @@ Accept incoming connections on a socket.
 For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-bind#toc2
 */
 func (soc *Socket) Bind(endpoint string) error {
+	if !soc.opened {
+		return errSocketClosed
+	}
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
 	if i, err := C.zmq_bind(soc.soc, s); int(i) != 0 {
@@ -457,6 +479,9 @@ Stop accepting connections on a socket.
 For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-bind#toc2
 */
 func (soc *Socket) Unbind(endpoint string) error {
+	if !soc.opened {
+		return errSocketClosed
+	}
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
 	if i, err := C.zmq_unbind(soc.soc, s); int(i) != 0 {
@@ -471,6 +496,9 @@ Create outgoing connection from socket.
 For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-connect#toc2
 */
 func (soc *Socket) Connect(endpoint string) error {
+	if !soc.opened {
+		return errSocketClosed
+	}
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
 	if i, err := C.zmq_connect(soc.soc, s); int(i) != 0 {
@@ -485,6 +513,9 @@ Disconnect a socket.
 For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-connect#toc2
 */
 func (soc *Socket) Disconnect(endpoint string) error {
+	if !soc.opened {
+		return errSocketClosed
+	}
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
 	if i, err := C.zmq_disconnect(soc.soc, s); int(i) != 0 {
@@ -509,6 +540,9 @@ Receive a message part from a socket.
 For a description of flags, see: http://api.zeromq.org/3-2:zmq-msg-recv#toc2
 */
 func (soc *Socket) RecvBytes(flags Flag) ([]byte, error) {
+	if !soc.opened {
+		return []byte{}, errSocketClosed
+	}
 	var msg C.zmq_msg_t
 	if i, err := C.zmq_msg_init(&msg); i != 0 {
 		return []byte{}, errget(err)
@@ -542,6 +576,9 @@ Send a message part on a socket.
 For a description of flags, see: http://api.zeromq.org/3-2:zmq-send#toc2
 */
 func (soc *Socket) SendBytes(data []byte, flags Flag) (int, error) {
+	if !soc.opened {
+		return 0, errSocketClosed
+	}
 	d := data
 	if len(data) == 0 {
 		d = []byte{0}
@@ -621,6 +658,9 @@ Example:
     }
 */
 func (soc *Socket) Monitor(addr string, events Event) error {
+	if !soc.opened {
+		return errSocketClosed
+	}
 	if addr == "" {
 		if i, err := C.zmq_socket_monitor(soc.soc, nil, C.int(events)); i != 0 {
 			return errget(err)
@@ -646,6 +686,9 @@ For a description of event_type, see: http://api.zeromq.org/3-2:zmq-socket-monit
 For an example, see: func (*Socket) Monitor
 */
 func (soc *Socket) RecvEvent(flags Flag) (event_type Event, addr string, value int, err error) {
+	if !soc.opened {
+		return EVENT_ALL, "", 0, errSocketClosed
+	}
 	var msg C.zmq_msg_t
 	if i, e := C.zmq_msg_init(&msg); i != 0 {
 		err = errget(e)
@@ -661,7 +704,7 @@ func (soc *Socket) RecvEvent(flags Flag) (event_type Event, addr string, value i
 
 	var t C.zmq_event_t
 	if size < C.int(unsafe.Sizeof(t)) {
-		err = errors.New("Not an event")
+		err = errNoEvent
 		return
 	}
 
@@ -683,6 +726,9 @@ Start built-in ØMQ proxy
 See: http://api.zeromq.org/3-2:zmq-proxy
 */
 func Proxy(frontend, backend, capture *Socket) error {
+	if !(frontend.opened && backend.opened && (capture == nil || capture.opened)) {
+		return errSocketClosed
+	}
 	var capt unsafe.Pointer
 	if capture != nil {
 		capt = capture.soc
