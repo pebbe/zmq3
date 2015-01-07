@@ -39,9 +39,9 @@ import (
 var (
 	defaultCtx *Context
 
-	errContextClosed = errors.New("Context is closed")
-	errSocketClosed  = errors.New("Socket is closed")
-	errNoEvent       = errors.New("Not an event")
+	ErrorContextClosed = errors.New("Context is closed")
+	ErrorSocketClosed  = errors.New("Socket is closed")
+	ErrorNoEvent       = errors.New("Not an event")
 )
 
 func init() {
@@ -121,7 +121,7 @@ func (ctx *Context) Term() error {
 
 func getOption(ctx *Context, o C.int) (int, error) {
 	if !ctx.opened {
-		return 0, errContextClosed
+		return 0, ErrorContextClosed
 	}
 	nc, err := C.zmq_ctx_get(ctx.ctx, o)
 	n := int(nc)
@@ -153,7 +153,7 @@ func (ctx *Context) GetMaxSockets() (int, error) {
 
 func setOption(ctx *Context, o C.int, n int) error {
 	if !ctx.opened {
-		return errContextClosed
+		return ErrorContextClosed
 	}
 	i, err := C.zmq_ctx_set(ctx.ctx, o, C.int(n))
 	if int(i) != 0 {
@@ -428,7 +428,7 @@ For a description of socket types, see: http://api.zeromq.org/3-2:zmq-socket#toc
 func (ctx *Context) NewSocket(t Type) (soc *Socket, err error) {
 	soc = &Socket{}
 	if !ctx.opened {
-		return soc, errContextClosed
+		return soc, ErrorContextClosed
 	}
 	s, e := C.zmq_socket(ctx.ctx, C.int(t))
 	if s == nil {
@@ -463,7 +463,7 @@ For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-bind#toc2
 */
 func (soc *Socket) Bind(endpoint string) error {
 	if !soc.opened {
-		return errSocketClosed
+		return ErrorSocketClosed
 	}
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
@@ -480,7 +480,7 @@ For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-bind#toc2
 */
 func (soc *Socket) Unbind(endpoint string) error {
 	if !soc.opened {
-		return errSocketClosed
+		return ErrorSocketClosed
 	}
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
@@ -497,7 +497,7 @@ For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-connect#toc2
 */
 func (soc *Socket) Connect(endpoint string) error {
 	if !soc.opened {
-		return errSocketClosed
+		return ErrorSocketClosed
 	}
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
@@ -514,7 +514,7 @@ For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-connect#toc2
 */
 func (soc *Socket) Disconnect(endpoint string) error {
 	if !soc.opened {
-		return errSocketClosed
+		return ErrorSocketClosed
 	}
 	s := C.CString(endpoint)
 	defer C.free(unsafe.Pointer(s))
@@ -541,7 +541,7 @@ For a description of flags, see: http://api.zeromq.org/3-2:zmq-msg-recv#toc2
 */
 func (soc *Socket) RecvBytes(flags Flag) ([]byte, error) {
 	if !soc.opened {
-		return []byte{}, errSocketClosed
+		return []byte{}, ErrorSocketClosed
 	}
 	var msg C.zmq_msg_t
 	if i, err := C.zmq_msg_init(&msg); i != 0 {
@@ -577,7 +577,7 @@ For a description of flags, see: http://api.zeromq.org/3-2:zmq-send#toc2
 */
 func (soc *Socket) SendBytes(data []byte, flags Flag) (int, error) {
 	if !soc.opened {
-		return 0, errSocketClosed
+		return 0, ErrorSocketClosed
 	}
 	d := data
 	if len(data) == 0 {
@@ -659,7 +659,7 @@ Example:
 */
 func (soc *Socket) Monitor(addr string, events Event) error {
 	if !soc.opened {
-		return errSocketClosed
+		return ErrorSocketClosed
 	}
 	if addr == "" {
 		if i, err := C.zmq_socket_monitor(soc.soc, nil, C.int(events)); i != 0 {
@@ -687,7 +687,7 @@ For an example, see: func (*Socket) Monitor
 */
 func (soc *Socket) RecvEvent(flags Flag) (event_type Event, addr string, value int, err error) {
 	if !soc.opened {
-		return EVENT_ALL, "", 0, errSocketClosed
+		return EVENT_ALL, "", 0, ErrorSocketClosed
 	}
 	var msg C.zmq_msg_t
 	if i, e := C.zmq_msg_init(&msg); i != 0 {
@@ -704,7 +704,7 @@ func (soc *Socket) RecvEvent(flags Flag) (event_type Event, addr string, value i
 
 	var t C.zmq_event_t
 	if size < C.int(unsafe.Sizeof(t)) {
-		err = errNoEvent
+		err = ErrorNoEvent
 		return
 	}
 
@@ -727,7 +727,7 @@ See: http://api.zeromq.org/3-2:zmq-proxy
 */
 func Proxy(frontend, backend, capture *Socket) error {
 	if !(frontend.opened && backend.opened && (capture == nil || capture.opened)) {
-		return errSocketClosed
+		return ErrorSocketClosed
 	}
 	var capt unsafe.Pointer
 	if capture != nil {
