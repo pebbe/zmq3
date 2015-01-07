@@ -8,6 +8,13 @@ import (
 	"runtime"
 )
 
+func Example_version() {
+	major, _, _ := zmq.Version()
+	fmt.Println("Version:", major)
+	// Output:
+	// Version: 3
+}
+
 func Example_test_connect_delay() {
 
 	fmt.Println("Done")
