@@ -7,6 +7,12 @@ package zmq3
 #include <zmq.h>
 #include <stdlib.h>
 #include <string.h>
+
+int
+    zmq3_major = ZMQ_VERSION_MAJOR,
+    zmq3_minor = ZMQ_VERSION_MINOR,
+    zmq3_patch = ZMQ_VERSION_PATCH;
+
 char *get_event(zmq_msg_t *msg, int *ev, int *val) {
     zmq_event_t event;
     char *s;
@@ -39,6 +45,8 @@ import (
 var (
 	defaultCtx *Context
 
+	major, minor, patch int
+
 	ErrorContextClosed = errors.New("Context is closed")
 	ErrorSocketClosed  = errors.New("Socket is closed")
 	ErrorNoEvent       = errors.New("Not an event")
@@ -51,6 +59,17 @@ func init() {
 	defaultCtx.opened = true
 	if defaultCtx.ctx == nil {
 		panic("Init of ZeroMQ context failed: " + errget(err).Error())
+	}
+	major, minor, patch = Version()
+	if major != 3 {
+		panic("Using zmq3 with ZeroMQ major version " + fmt.Sprint(major))
+	}
+	if major != int(C.zmq3_major) || minor != int(C.zmq3_minor) || patch != int(C.zmq3_patch) {
+		panic(
+			fmt.Sprintf(
+				"zmq3 was installed with ZeroMQ version %d.%d.%d, but the application links with version %d.%d.%d",
+				int(C.zmq3_major), int(C.zmq3_minor), int(C.zmq3_patch),
+				major, minor, patch))
 	}
 }
 
