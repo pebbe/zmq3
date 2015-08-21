@@ -529,7 +529,7 @@ func (soc *Socket) Connect(endpoint string) error {
 /*
 Disconnect a socket.
 
-For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-connect#toc2
+For a description of endpoint, see: http://api.zeromq.org/3-2:zmq-disconnect#toc2
 */
 func (soc *Socket) Disconnect(endpoint string) error {
 	if !soc.opened {
