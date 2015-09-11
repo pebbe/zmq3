@@ -8,6 +8,10 @@ import (
 	"runtime"
 )
 
+var (
+	errerr = errors.New("error")
+)
+
 func Example_test_version() {
 	major, _, _ := zmq.Version()
 	fmt.Println("Version:", major)
@@ -37,22 +41,22 @@ func Example_test_connect_resolve() {
 	checkErr(err)
 
 	err = sock.Connect("tcp://localhost:invalid")
-	fmt.Println(err)
+	fmt.Println(e(err, true))
 
 	err = sock.Connect("tcp://in val id:1234")
-	fmt.Println(err)
+	fmt.Println(e(err, true))
 
 	err = sock.Connect("invalid://localhost:1234")
-	fmt.Println(err)
+	fmt.Println(e(err, true))
 
 	err = sock.Close()
 	checkErr(err)
 
 	fmt.Println("Done")
 	// Output:
-	// invalid argument
-	// invalid argument
-	// protocol not supported
+	// error
+	// error
+	// error
 	// Done
 }
 
@@ -315,4 +319,11 @@ func checkErr(err error) bool {
 		return true
 	}
 	return false
+}
+
+func e(err error, willfail bool) error {
+	if err == nil || willfail == false {
+		return err
+	}
+	return errerr
 }
