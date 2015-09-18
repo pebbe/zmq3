@@ -187,7 +187,7 @@ the default context. If your application is using only the inproc
 transport for messaging you may set this to zero, otherwise set it to at
 least one. This option only applies before creating any sockets.
 
-Default value   1
+Default value: 1
 */
 func SetIoThreads(n int) error {
 	return defaultCtx.SetIoThreads(n)
@@ -199,7 +199,7 @@ your application is using only the inproc transport for messaging you
 may set this to zero, otherwise set it to at least one. This option only
 applies before creating any sockets.
 
-Default value   1
+Default value: 1
 */
 func (ctx *Context) SetIoThreads(n int) error {
 	return setOption(ctx, C.ZMQ_IO_THREADS, n)
@@ -208,7 +208,7 @@ func (ctx *Context) SetIoThreads(n int) error {
 /*
 Sets the maximum number of sockets allowed in the default context.
 
-Default value   1024
+Default value: 1024
 */
 func SetMaxSockets(n int) error {
 	return defaultCtx.SetMaxSockets(n)
@@ -217,7 +217,7 @@ func SetMaxSockets(n int) error {
 /*
 Sets the maximum number of sockets allowed.
 
-Default value   1024
+Default value: 1024
 */
 func (ctx *Context) SetMaxSockets(n int) error {
 	return setOption(ctx, C.ZMQ_MAX_SOCKETS, n)
