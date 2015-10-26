@@ -7,6 +7,7 @@ package zmq3
 #include <zmq.h>
 #include <stdlib.h>
 #include <string.h>
+#include "zmq3.h"
 
 int
     zmq3_major = ZMQ_VERSION_MAJOR,

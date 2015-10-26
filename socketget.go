@@ -3,6 +3,7 @@ package zmq3
 /*
 #include <zmq.h>
 #include <stdint.h>
+#include "zmq3.h"
 */
 import "C"
 
