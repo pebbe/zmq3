@@ -51,6 +51,7 @@ var (
 	ErrorContextClosed = errors.New("Context is closed")
 	ErrorSocketClosed  = errors.New("Socket is closed")
 	ErrorNoEvent       = errors.New("Not an event")
+	ErrorNoSocket      = errors.New("No such socket")
 )
 
 func init() {
