@@ -11,6 +11,12 @@ Including all examples of [ØMQ - The Guide](http://zguide.zeromq.org/page:all).
 
 Keywords: zmq, zeromq, 0mq, networks, distributed computing, message passing, fanout, pubsub, pipeline, request-reply
 
+### See also
+
+ * [Mangos](https://github.com/go-mangos/mangos) — An implementation in pure Go of the SP ("Scalable Protocols") protocols
+ * [go-nanomsg](https://github.com/op/go-nanomsg) — Language bindings for nanomsg in Go
+ * [goczmq](https://github.com/zeromq/goczmq) — A Go interface to CZMQ
+
 ## Install
 
     go get github.com/pebbe/zmq3
