@@ -52,33 +52,43 @@ var (
 	ErrorSocketClosed  = errors.New("Socket is closed")
 	ErrorNoEvent       = errors.New("Not an event")
 	ErrorNoSocket      = errors.New("No such socket")
+
+	initVersionError error
+	initContextError error
 )
 
 func init() {
+	major, minor, patch = Version()
+	if major != 3 {
+		initVersionError = fmt.Errorf("Using zmq3 with ZeroMQ major version %d", major)
+		return
+	}
+	if major != int(C.zmq3_major) || minor != int(C.zmq3_minor) || patch != int(C.zmq3_patch) {
+		initVersionError =
+			fmt.Errorf(
+				"zmq3 was installed with ZeroMQ version %d.%d.%d, but the application links with version %d.%d.%d",
+				int(C.zmq3_major), int(C.zmq3_minor), int(C.zmq3_patch),
+				major, minor, patch)
+		return
+	}
+
 	var err error
 	defaultCtx = &Context{}
 	defaultCtx.ctx, err = C.zmq_ctx_new()
+	if defaultCtx.ctx == nil || err != nil {
+		initContextError = fmt.Errorf("Init of ZeroMQ context failed: %v", errget(err))
+		return
+	}
 	defaultCtx.opened = true
-	if defaultCtx.ctx == nil {
-		panic("Init of ZeroMQ context failed: " + errget(err).Error())
-	}
-	major, minor, patch = Version()
-	if major != 3 {
-		panic("Using zmq3 with ZeroMQ major version " + fmt.Sprint(major))
-	}
-	if major != int(C.zmq3_major) || minor != int(C.zmq3_minor) || patch != int(C.zmq3_patch) {
-		panic(
-			fmt.Sprintf(
-				"zmq3 was installed with ZeroMQ version %d.%d.%d, but the application links with version %d.%d.%d",
-				int(C.zmq3_major), int(C.zmq3_minor), int(C.zmq3_patch),
-				major, minor, patch))
-	}
 }
 
 //. Util
 
 // Report 0MQ library version.
 func Version() (major, minor, patch int) {
+	if initVersionError != nil {
+		return 0, 0, 0
+	}
 	var maj, min, pat C.int
 	C.zmq_version(&maj, &min, &pat)
 	return int(maj), int(min), int(pat)
@@ -102,6 +112,9 @@ type Context struct {
 
 // Create a new context.
 func NewContext() (ctx *Context, err error) {
+	if initVersionError != nil {
+		return nil, initVersionError
+	}
 	ctx = &Context{}
 	c, e := C.zmq_ctx_new()
 	if c == nil {
@@ -121,6 +134,12 @@ Terminates the default context.
 For linger behavior, see: http://api.zeromq.org/3-2:zmq-ctx-destroy
 */
 func Term() error {
+	if initVersionError != nil {
+		return initVersionError
+	}
+	if initContextError != nil {
+		return initContextError
+	}
 	return defaultCtx.Term()
 }
 
@@ -154,6 +173,12 @@ func getOption(ctx *Context, o C.int) (int, error) {
 
 // Returns the size of the 0MQ thread pool in the default context.
 func GetIoThreads() (int, error) {
+	if initVersionError != nil {
+		return 0, initVersionError
+	}
+	if initContextError != nil {
+		return 0, initContextError
+	}
 	return defaultCtx.GetIoThreads()
 }
 
@@ -164,6 +189,12 @@ func (ctx *Context) GetIoThreads() (int, error) {
 
 // Returns the maximum number of sockets allowed in the default context.
 func GetMaxSockets() (int, error) {
+	if initVersionError != nil {
+		return 0, initVersionError
+	}
+	if initContextError != nil {
+		return 0, initContextError
+	}
 	return defaultCtx.GetMaxSockets()
 }
 
@@ -192,6 +223,12 @@ least one. This option only applies before creating any sockets.
 Default value: 1
 */
 func SetIoThreads(n int) error {
+	if initVersionError != nil {
+		return initVersionError
+	}
+	if initContextError != nil {
+		return initContextError
+	}
 	return defaultCtx.SetIoThreads(n)
 }
 
@@ -213,6 +250,12 @@ Sets the maximum number of sockets allowed in the default context.
 Default value: 1024
 */
 func SetMaxSockets(n int) error {
+	if initVersionError != nil {
+		return initVersionError
+	}
+	if initContextError != nil {
+		return initContextError
+	}
 	return defaultCtx.SetMaxSockets(n)
 }
 
@@ -434,6 +477,12 @@ from different goroutines without using something like a mutex.
 For a description of socket types, see: http://api.zeromq.org/3-2:zmq-socket#toc3
 */
 func NewSocket(t Type) (soc *Socket, err error) {
+	if initVersionError != nil {
+		return nil, initVersionError
+	}
+	if initContextError != nil {
+		return nil, initContextError
+	}
 	return defaultCtx.NewSocket(t)
 }
 
