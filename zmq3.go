@@ -66,7 +66,7 @@ func init() {
 	if major != int(C.zmq3_major) || minor != int(C.zmq3_minor) || patch != int(C.zmq3_patch) {
 		initVersionError =
 			fmt.Errorf(
-				"zmq3 was installed with ZeroMQ version %d.%d.%d, but the application links with version %d.%d.%d",
+				"zmq3 was compiled with ZeroMQ version %d.%d.%d, but the runtime links with version %d.%d.%d",
 				int(C.zmq3_major), int(C.zmq3_minor), int(C.zmq3_patch),
 				major, minor, patch)
 		return
